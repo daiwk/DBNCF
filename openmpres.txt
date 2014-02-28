@@ -1,0 +1,133 @@
+loading ../../data/bin/LS.bin
+3
+3
+3
+4
+reading indices...
+i: 0; index: 0
+i: 1; index: 2
+i: 2; index: 3
+reading count...
+i: 0; count: 0
+i: 1; count: 2
+i: 2; count: 3
+reading ids...
+i: 0; ids: 0
+i: 1; ids: 1
+i: 2; ids: 2
+i: 3; ids: 3
+reading ratings...
+i: 0; ratings: 5
+i: 1; ratings: 5
+i: 2; ratings: 3
+i: 3; ratings: 2
+u: 1
+r:0
+u: 2
+r:1
+u: 3
+r:2
+m: 1
+m: 2
+m: 3
+loading ../../data/bin/VS.bin
+3
+3
+3
+4
+reading indices...
+i: 0; index: 0
+i: 1; index: 2
+i: 2; index: 3
+reading count...
+i: 0; count: 0
+i: 1; count: 2
+i: 2; count: 3
+reading ids...
+i: 0; ids: 0
+i: 1; ids: 1
+i: 2; ids: 2
+i: 3; ids: 3
+reading ratings...
+i: 0; ratings: 5
+i: 1; ratings: 5
+i: 2; ratings: 3
+i: 3; ratings: 2
+u: 1
+r:0
+u: 2
+r:1
+u: 3
+r:2
+m: 1
+m: 2
+m: 3
+loading ../../data/bin/TS.bin
+3
+3
+3
+4
+reading indices...
+i: 0; index: 0
+i: 1; index: 2
+i: 2; index: 3
+reading count...
+i: 0; count: 0
+i: 1; count: 2
+i: 2; count: 3
+reading ids...
+i: 0; ids: 0
+i: 1; ids: 1
+i: 2; ids: 2
+i: 3; ids: 3
+reading ratings...
+i: 0; ratings: 5
+i: 1; ratings: 5
+i: 2; ratings: 3
+i: 3; ratings: 2
+u: 1
+r:0
+u: 2
+r:1
+u: 3
+r:2
+m: 1
+m: 2
+m: 3
+loading ../../data/bin/QS.bin
+3
+3
+3
+4
+reading indices...
+i: 0; index: 0
+i: 1; index: 2
+i: 2; index: 3
+reading count...
+i: 0; count: 0
+i: 1; count: 2
+i: 2; count: 3
+reading ids...
+i: 0; ids: 0
+i: 1; ids: 1
+i: 2; ids: 2
+i: 3; ids: 3
+reading ratings...
+i: 0; ratings: 5
+i: 1; ratings: 5
+i: 2; ratings: 3
+i: 3; ratings: 2
+u: 1
+r:0
+u: 2
+r:1
+u: 3
+r:2
+m: 1
+m: 2
+m: 3
+model id: 4
+RBM default constructor 
+finished add set
+training...
+finished training...

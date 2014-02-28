@@ -1,0 +1,23 @@
+CC = mpic++
+CFLAGS = -I../lib/mrmpi/src -Wall -ansi -O3 -funroll-all-loops  
+LDFLAGS = -lboost_program_options-mt -lpthread
+OBJECTS = Dataset.o Dumb.o Ensemble.o Model.o Misc.o RBM.o RBMMapReduce.o ../lib/mrmpi/src/libmrmpi.a
+EXEC = MapReduce
+
+all: $(EXEC)
+
+MapReduce: MapReduce.o $(OBJECTS)
+	$(CC) $(LDFLAGS) -o $@ $^
+
+%.o: %.cpp
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+.PHONY: clean edit rebuild
+
+clean:
+	rm -f *.o *~ $(EXEC)
+
+edit:
+	geany *.h *.cpp &
+
+rebuild: clean all
