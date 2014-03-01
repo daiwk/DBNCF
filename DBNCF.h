@@ -17,22 +17,27 @@ class DBNCF : public Model {
 
 public:
 
-    // Constructors
+    // 构造函数与析构函数
+    // 默认构造函数
     DBNCF();
+    
+    // 读取模型文件生成DBNCF的构造函数
     DBNCF(string filename);
+
+    // 析构函数
     virtual ~DBNCF();
 
-    // Model
+    // Model的函数
     virtual void train(string dataset="LS", bool reset=true);
     virtual double test(string dataset="TS");
     virtual double predict(int user, int movie);
     virtual void save(string filename);
     virtual string toString();
    
-    // Methods
+    // DBNCF的函数
+    virtual void train_separate(string dataset="LS", bool reset=true);
     
-    // Attributes
-    
+    // 成员变量
     // 可以通过读配置文件Configuration.h得到
     int train_epochs;  // Config::DBNCF::TRAIN_EPOCHS
     int batch_size;    // Config::DBNCF::BATCH_SIZE

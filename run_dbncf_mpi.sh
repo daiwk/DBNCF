@@ -30,9 +30,9 @@ function run_small_mpi()
 	echo "starting openmp ${type} at:"
 	eval ${date}
 
-	#run_cmd="./RunDBN 
-	#run_cmd="mpirun -machinefile ${machines} -np 4 RunDBN 
-	run_cmd="./RunDBN 
+	#run_cmd="./RunDBNCF 
+	#run_cmd="mpirun -machinefile ${machines} -np 4 RunDBNCF
+	run_cmd="./RunDBNCF 
 		--LS ${LS}
 		--TS ${TS} 
 		--QS ${TS} 
@@ -67,8 +67,9 @@ function run_full_mpi()
 	echo "starting openmp ${type} at:"
 	eval ${date}
 
-	#run_cmd="mpirun -machinefile ${machines} -np 4 RunDBN 
-	run_cmd="./RunDBN 
+	#run_cmd="./RunDBNCF 
+	#run_cmd="mpirun -machinefile ${machines} -np 4 RunDBNCF 
+	run_cmd="./RunDBNCF 
 		--LS ${LS}
 		--TS ${TS} 
 		--QS ${TS} 

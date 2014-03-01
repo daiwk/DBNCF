@@ -57,7 +57,11 @@ public:
     virtual void update_vb(double* vb_acc, int* vb_count, int nth);
     virtual void update_hb(double* hb_acc, int nth);
     virtual void update_d(double* d_acc, bool* watched, int nth);
-
+    
+    // 只更新LS的某些batch
+    // batch: 此minbatch的第一个user的下标
+    virtual void train_batch(string dataset="LS", bool reset=true, int batch=0);
+    
     // Attributes
     int N;
     int M;

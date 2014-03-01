@@ -100,9 +100,7 @@ void RBMBASIC::train_full(bool reset = true, int rbmlayers_id = 0)
     // print running time
     gettimeofday(&end, NULL);
     usec = 1000000 * (end.tv_sec-start.tv_sec) + end.tv_usec - start.tv_usec;
-//    cout << "File: " << __FILE__ << ", Function: " << __FUNCTION__  << ", Line: " << __LINE__ << endl;
     printf( "File: %s, Function: %s, Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
-//    cout << "Time of reset(): " << usec << " usec[" << usec / 1000000. <<" sec]." << endl;
     printf("Time of reset(): %ld usec[ %lf sec].", usec, usec / 1000000.);
     // Print some stats
 //    if (verbose) {
@@ -366,7 +364,7 @@ void RBMBASIC::train_full(bool reset = true, int rbmlayers_id = 0)
  
     // 把hb的状态输出到文件，供下一层当做vb的输入
 
-    sprintf(ss, "rbm-hb-%d", rbmlayers_id + 1);
+    sprintf(ss, "rbmbasic-hb-%d", rbmlayers_id + 1);
     string hb_filename_out = ss; 
     ofstream out_hb(hb_filename_out.c_str(), ios::out | ios::binary);
 
@@ -587,3 +585,4 @@ void RBMBASIC::sample_visible_p(double* vp, double* vs, int* mask, int mask_size
         vs[j] = (uniform() < vp[j]) ? 1. : 0.;
     }
 }
+

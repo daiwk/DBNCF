@@ -7,6 +7,9 @@
  * - Last changes: April 8, 2010
  * ========================================================================= */
 
+// modified by daiwenkai
+// Date: March 1st, 2014
+
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
@@ -280,9 +283,7 @@ void RBMCF::train(string dataset, bool reset) {
     // print running time
     gettimeofday(&end, NULL);
     usec = 1000000 * (end.tv_sec-start.tv_sec) + end.tv_usec - start.tv_usec;
-//    cout << "File: " << __FILE__ << ", Function: " << __FUNCTION__  << ", Line: " << __LINE__ << endl;
     printf( "File: %s, Function: %s, Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
-//    cout << "Time of reset(): " << usec << " usec[" << usec / 1000000. <<" sec]." << endl;
     printf("Time of reset(): %ld usec[ %lf sec].", usec, usec / 1000000.);
     // Print some stats
     if (verbose) {
@@ -290,12 +291,9 @@ void RBMCF::train(string dataset, bool reset) {
         *out << "% ---" << endl;
         *out << "% Epoch\tRMSE\tRMSE-TRAIN\tTIME\n";
         out->flush();
-        //*out << 0 << "\t" << validate() << "\t" << usec / 1000000. << endl;
         char res[1000];
         sprintf(res, "0\t%lf\t%lf\t%lf\t\n", validate(), test("LS"), usec / 1000000.);
         *out << res;
-//        *out << 0 << "\t" << validate() << "\t" << usec / 1000000. << endl;
-	
 	
         out->flush();
     }
@@ -510,9 +508,7 @@ void RBMCF::train(string dataset, bool reset) {
     // print running time
     gettimeofday(&end, NULL);
     usec = 1000000 * (end.tv_sec-start.tv_sec) + end.tv_usec - start.tv_usec;
-//    cout << "File: " << __FILE__ << ", Function: " << __FUNCTION__  << ", Line: " << __LINE__ << endl;
     printf( "File: %s, Function: %s, Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
-//    cout << "Time of train(): " << usec << " usec[" << usec / 1000000. <<" sec]." << endl;
     printf("Time of train(): %ld usec[ %lf sec].", usec, usec / 1000000.);
 }
 
@@ -1082,3 +1078,294 @@ void RBMCF::update_d(double* d_acc, bool* watched, int nth) {
         }
     }
 }
+
+void RBMCF::train_batch(string dataset, bool reset, int batch) {
+    // Pop parameters
+    int epochs = *(int*) getParameter("epochs");
+    int batch_size = *(int*) getParameter("batch_size");
+    int cd_steps = *(int*) getParameter("cd_steps");
+    bool verbose = *(bool*) getParameter("verbose");
+    ostream* out = *(ostream**) getParameter("log");
+
+    // Pop LS
+    Dataset* LS = sets[dataset];
+    Dataset* QS = sets["QS"];
+    assert(LS != NULL);
+
+    if (conditional) {
+        assert(QS != NULL);
+        assert(LS->nb_rows == QS->nb_rows);
+    }
+
+    // Start calculating the running time
+    struct timeval start;
+    struct timeval end;
+    unsigned long usec;
+    gettimeofday(&start, NULL);
+
+    // Reset parameters
+    if (reset) {
+        // Reset everything
+        this->reset();
+
+        // Set vb_ik to the logs of their respective base rates
+        for (int n = 0; n < LS->nb_rows; n++) {
+            for (int m = LS->index[n]; m < LS->index[n] + LS->count[n]; m++) {
+                vb[_ik(LS->ids[m], LS->ratings[m] - 1)] += 1.;
+            }
+        }
+
+        for (int i = 0; i < M; i++) {
+            int ik_0 = _ik(i, 0);
+            double total = 0.;
+
+            for (int k = 0; k < K; k++) {
+                total += vb[ik_0 + k];
+            }
+
+            if (total > 0.) {
+                for (int k = 0; k < K; k++) {
+                    int ik = ik_0 + k;
+
+                    if (vb[ik] == 0.) {
+                        vb[ik] = -10E5;
+                    } else {
+                        vb[ik] = log(vb[ik] / total);
+                    }
+                }
+            }
+        }
+    }
+
+    // print running time
+    gettimeofday(&end, NULL);
+    usec = 1000000 * (end.tv_sec-start.tv_sec) + end.tv_usec - start.tv_usec;
+    printf( "File: %s, Function: %s, Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
+    printf("Time of reset(): %ld usec[ %lf sec].", usec, usec / 1000000.);
+    
+    // Print some stats
+    if (verbose) {
+        *out << toString() << endl;
+        *out << "% ---" << endl;
+        *out << "% Epoch\tRMSE\tRMSE-TRAIN\tTIME\n";
+        out->flush();
+        char res[1000];
+        sprintf(res, "0\t%lf\t%lf\t%lf\t\n", validate(), test("LS"), usec / 1000000.);
+        *out << res;
+	
+        out->flush();
+    }
+
+    // Start calculating the running time
+    gettimeofday(&start, NULL);
+    
+    // Allocate local data structures
+    double* vs = new double[M * K];
+    double* vp = new double[M * K];
+    double* hs = new double[F];
+    double* hp = new double[F];
+
+    double* w_acc = new double[M * K * F];
+    int* w_count = new int[M * K * F];
+    double* vb_acc = new double[M * K];
+    int* vb_count = new int[M * K];
+    double* hb_acc = new double[F];
+
+    bool* watched = NULL;
+    if (conditional) {
+        watched = new bool[M];
+    }
+
+    // Loop through epochs
+    for (int epoch = 1; epoch <= epochs; epoch++) {
+        
+        // Start calculating the running time
+        struct timeval start_train;
+        struct timeval end_train;
+        unsigned long usec_train;
+        gettimeofday(&start_train, NULL);
+
+        // Loop through mini-batches of users
+        //for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
+            // Reset the accumulators
+            zero(w_acc, M * K * F);
+            zero(w_count, M * K * F);
+            zero(vb_acc, M * K);
+            zero(vb_count, M * K);
+            zero(hb_acc, F);
+
+            if (conditional) {
+                zero(watched, M);
+            }
+
+            // Loop through users of current batch
+            for (int n = batch; n < min(batch + batch_size, LS->nb_rows); n++) {
+                // Set user n data on the visible units
+                for (int m = LS->index[n]; m < LS->index[n] + LS->count[n]; m++) {
+                    int i = LS->ids[m];
+                    int ik_0 = _ik(i, 0);
+
+                    for (int k = 0; k < K; k++) {
+                        vs[ik_0 + k] = 0.;
+                    }
+
+                    vs[ik_0 + LS->ratings[m] - 1] = 1.;
+                }
+
+                // Compute p(h | V, d) into hp
+                if (!conditional) {
+                    update_hidden(vs, &LS->ids[LS->index[n]], LS->count[n], hp);
+                } else {
+                    update_hidden(vs, &LS->ids[LS->index[n]], LS->count[n], &QS->ids[QS->index[n]], QS->count[n], hp);
+                }
+
+                // Accumulate "v_ik * h_j", "v_ik" and "h_j"s (0)
+                for (int m = LS->index[n]; m < LS->index[n] + LS->count[n]; m++) {
+                    int i = LS->ids[m];
+                    int k = LS->ratings[m] - 1;
+                    int ikj_0 = _ikj(i, k, 0);
+
+                    for (int j = 0; j < F; j++) {
+                        w_acc[ikj_0 + j] += hp[j];
+                    }
+
+                    vb_acc[_ik(i, k)] += 1.;
+                }
+
+                for (int j = 0; j < F; j++) {
+                    hb_acc[j] += hp[j];
+                }
+
+                // Count seen movies
+                if (conditional) {
+                    for (int m = LS->index[n]; m < LS->index[n] + LS->count[n]; m++) {
+                        watched[LS->ids[m]] = true;
+                    }
+
+                    for (int m = QS->index[n]; m < QS->index[n] + QS->count[n]; m++) {
+                        watched[QS->ids[m]] = true;
+                    }
+                }
+
+                // Gibbs sampling
+                for (int step = 0; step < cd_steps; step++) {
+                    // Sample from p(h | V, d) into hs
+                    sample_hidden(hp, hs);
+
+                    // Compute p(V | h) into vp
+                    update_visible(hs, vp, &LS->ids[LS->index[n]], LS->count[n]);
+
+                    // Sample from p(V | h) into hs
+                    sample_visible(vp, vs, &LS->ids[LS->index[n]], LS->count[n]);
+
+                    // Compute p(h | V, d) into hp
+                    if (!conditional) {
+                        update_hidden(vs, &LS->ids[LS->index[n]], LS->count[n], hp);
+                    } else {
+                        update_hidden(vs, &LS->ids[LS->index[n]], LS->count[n], &QS->ids[QS->index[n]], QS->count[n], hp);
+                    }
+                }
+
+                // Accumulate "-v_ik * h_j", "-v_ik" and "-h_j"s (T)
+                // Count the number of terms in the accumulators
+                for (int m = LS->index[n]; m < LS->index[n] + LS->count[n]; m++) {
+                    int i = LS->ids[m];
+                    int ik_0 = _ik(i, 0);
+
+                    for (int k = 0; k < K; k++) {
+                        int ik = ik_0 + k;
+
+                        for (int j = 0; j < F; j++) {
+                            int ikj = _ikj(i, k, j);
+
+                            w_acc[ikj] -= vs[ik] * hp[j];
+                            w_count[ikj]++;
+                        }
+
+                        vb_acc[ik] -= vs[ik];
+                        vb_count[ik]++;
+                    }
+                }
+
+                for (int j = 0; j < F; j++) {
+                    hb_acc[j] -= hp[j];
+                }
+            }
+
+            // Update weights and biases
+            update_w(w_acc, w_count, (epoch - 1) * LS->nb_rows + batch);
+            update_vb(vb_acc, vb_count, (epoch - 1) * LS->nb_rows + batch);
+            update_hb(hb_acc, (epoch - 1) * LS->nb_rows + batch);
+
+            if (conditional) {
+                update_d(hb_acc, watched, (epoch - 1) * LS->nb_rows + batch);
+            }
+        // }
+
+        // Log RMSE
+        if (verbose) {
+            
+            gettimeofday(&end_train, NULL);
+            usec_train = 1000000 * (end_train.tv_sec-start_train.tv_sec) + end_train.tv_usec - start_train.tv_usec;
+            char res[1000];
+            sprintf(res, "%d\t%lf\t%lf\t%lf\n", epoch, validate(), test("LS"), usec_train / 1000000.);
+            *out << res;
+            out->flush();
+        }
+    }
+
+    // Added by daiwenkai
+    // 把hs的状态输出到文件，供RBMCF_P当做输入
+
+
+    char ss[1000];
+    // 只有rbmlayers_id=0（最开始那层）的时候才调用这个train函数，其他层调用的是train_full函数
+    int rbmlayers_id = 0;
+    sprintf(ss, "rbm-hs-%d", rbmlayers_id);
+    string hs_filename = ss; 
+    ofstream out_hs(hs_filename.c_str(), ios::out | ios::binary);
+
+    if (out_hs.fail()) {
+        throw runtime_error("I/O exception! In openning rbm-hs-%d");
+    }
+    
+    for(int dd = 0; dd < F; dd++)
+        printf("after train: hs[%d]: %lf\n", dd, hs[dd]);
+    
+    out_hs.write((char*) hs, F * sizeof (double));
+    out_hs.close();
+
+    // 把hb的状态输出到文件，供RBMCF_P当做输入
+
+    sprintf(ss, "rbmcf-hb-%d", rbmlayers_id);
+    string hb_filename_out = ss; 
+    ofstream out_hb(hb_filename_out.c_str(), ios::out | ios::binary);
+
+    if (out_hb.fail()) {
+        throw runtime_error("I/O exception! In openning rbm-hs-%d");
+    }
+    
+    out_hb.write((char*) hb, F * sizeof (double));
+    out_hb.close();
+    
+ 
+    // Deallocate data structures
+    if (vs != NULL) delete[] vs;
+    if (vp != NULL) delete[] vp;
+    if (hs != NULL) delete[] hs;
+    if (hp != NULL) delete[] hp;
+
+    if (w_acc != NULL) delete[] w_acc;
+    if (w_count != NULL) delete[] w_count;
+    if (vb_acc != NULL) delete[] vb_acc;
+    if (vb_count != NULL) delete[] vb_count;
+    if (hb_acc != NULL) delete[] hb_acc;
+    if (watched != NULL) delete[] watched;
+    
+    // print running time
+    gettimeofday(&end, NULL);
+    usec = 1000000 * (end.tv_sec-start.tv_sec) + end.tv_usec - start.tv_usec;
+    printf( "File: %s, Function: %s, Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
+    printf("Time of train(): %ld usec[ %lf sec].", usec, usec / 1000000.);
+}
+

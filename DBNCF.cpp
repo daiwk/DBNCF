@@ -18,15 +18,18 @@
 
 using namespace std;
 
-// Constructors
+#define _ikj(i, k, j) ((i) * K * F + (k) * F + (j))
+#define _ik(i, k) ((i) * K + (k))
+#define _ij(i, j) ((i) * F + (j))
 
+// 默认构造函数
 DBNCF::DBNCF() : Model(CLASS_DBNCF)
 {
 
     train_epochs = Config::DBNCF::TRAIN_EPOCHS;
     
     // 初始化input_layer
-    // input_layer是正常的rbmcf，使用原来的RBM参数,隐含层节点数使用配置值。
+    // input_layer是正常的rbmcf，使用原来的RBM参数,隐含层节点数使用配置值
     string input_layer_name = "input_layer.rbmcf";
     RBMCF in_cf = RBMCF();
     in_cf.setParameter("F", &hidden_layer_sizes[0], sizeof(int));
@@ -78,19 +81,21 @@ DBNCF::DBNCF() : Model(CLASS_DBNCF)
 
 }
 
-DBNCF::DBNCF(string filename) : Model(CLASS_DBNCF) {
-    // Open file
+// 读取模型文件生成DBNCF的构造函数
+DBNCF::DBNCF(string filename) : Model(CLASS_DBNCF)
+{
+    // 打开文件
     ifstream in(filename.c_str(), ios::in | ios::binary);
     if (in.fail()) {
         throw runtime_error("I/O exception");
     }
 
-    // Check ID
+    // 检查ID
     char* id = new char[2];
     in.read(id, 2 * sizeof(char));
     assert(id[0] == (0x30 + __id) && id[1] == 0x0A);
 
-    // Load parameters
+    // 读取参数
     int tmp_int;
 
     in.read((char*) &tmp_int, sizeof (int));
@@ -144,17 +149,18 @@ DBNCF::DBNCF(string filename) : Model(CLASS_DBNCF) {
     out_cf.save(output_layer_name);
     output_layer = new RBMCF(output_layer_name);
 
-    // Default verbose and output
+    // 默认的verbose及输出重定向
     setParameter("verbose", &Config::DBNCF::VERBOSE, sizeof(bool));
 
     ostream* log = &cout;
     setParameter("log", &log, sizeof(ostream*));
 
-    // Close file
+    // 关闭文件
     in.close();
 }
 
 
+// 析构函数
 DBNCF::~DBNCF()
 {
     delete input_layer;
@@ -165,8 +171,110 @@ DBNCF::~DBNCF()
 
 }
 
-// Model
-void DBNCF::train(string dataset, bool reset)
+// Model的函数
+void DBNCF::train(string dataset, bool reset) {
+    
+    // Pop parameters
+    int epochs = *(int*) getParameter("epochs");
+    int batch_size = *(int*) getParameter("batch_size");
+    int cd_steps = *(int*) getParameter("cd_steps");
+    bool verbose = *(bool*) getParameter("verbose");
+    ostream* out = *(ostream**) getParameter("log");
+
+    Dataset* LS = sets[dataset];
+    Dataset* QS = sets["QS"];
+    assert(LS != NULL);
+
+//    if (conditional) {
+//        assert(QS != NULL);
+//        assert(LS->nb_rows == QS->nb_rows);
+//    }
+
+    for (int i = 0; i < hidden_layer_num - 1; i++) {
+
+        for(int epoch = 0; epoch < train_epochs; epoch++) {
+               
+            for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
+	        
+		    for (int l = 0; l <= i; l++) {
+		    
+		        // 初始化前面每一层RBM的输入变量
+		        if (l == 0) {
+			    
+			    // sample h from v
+			    bool reset = false;
+                            input_layer->train_batch(dataset, reset, batch);
+		        }
+		        else {
+                            // sample hl from hl-1
+			    bool reset = false;
+			    
+			    // 注意下标：此函数读rbm-h*-l，输出rbm-h*-l+1
+                            hidden_layers[l - 1]->train_full(reset, l); 
+                            printf("layer %d trained\n", l - 1); 
+            
+                            // 训练完后，要更新前一层rbm的隐含层的bias为本层的可见层的bias
+			    int hidden_size = hidden_layers[l - 1]->M;
+                            printf("hidden_size: %d\n", hidden_size);
+                            
+			    for(int m = 0; m < hidden_size; m++) {
+            
+                                double now_vb = hidden_layers[l]->vb[m];
+
+				// l=1: 第一个rbmbasic，它的上一层是input_layer
+                                if( l == 1) {
+                                    
+				    printf("pre_hb: %lf ", input_layer->hb[m]);
+                                    input_layer->hb[m] = now_vb;
+                                    printf("now_hb: %lf\n ", input_layer->hb[m]);
+                                }
+                                else {
+                                    
+				    hidden_layers[l - 2]->hb[m] = now_vb;
+                                    printf("now_hb: %lf\n ", hidden_layers[l - 2]->hb[m]);
+                                }
+                            }
+		        }
+		    }  // End of for (int l = 0; l <= i; l++)
+
+		    // k-cd of layer i
+		    if(i == 0) {
+			// input_layer->kcd, 传batch号进去;
+			// do nothing
+			
+		    }
+		    else {
+			// hidden_layeri->kcd;
+			// do nothing
+
+		    }
+
+	    }  // End of for (int batch = 0; batch < LS->nb_rows; batch += batch_size)
+       }  // End of for(int epoch = 0; epoch < train_epochs; epoch++)
+    }  // End of for (int l = 0; l < hidden_layer_num - 1; l++)
+
+    printf("after iterations...\n");
+    printf("generalization RMSE: %lf\n", input_layer->test());
+    printf("training RMSE: %lf\n", input_layer->test("LS"));
+    // 可以用openmp并行
+    char ss[1000];
+    sprintf(ss, "rbm-%d", 0);
+    string rbm_name = ss;
+    input_layer->save(rbm_name);
+
+    for(int i = 0; i < hidden_layer_num - 1; i++) {
+        char ss[1000];
+        sprintf(ss, "rbm-%d", i + 1);
+        string rbm_name = ss;
+        hidden_layers[i]->save(rbm_name);
+    }
+
+
+
+}
+
+// DBNCF的函数
+void DBNCF::train_separate(string dataset, bool reset)
 {
     
     printf("DBNCF epochs: %d\n", train_epochs);
@@ -221,7 +329,6 @@ void DBNCF::train(string dataset, bool reset)
         string rbm_name = ss;
         hidden_layers[i]->save(rbm_name);
     }
-
 
 }
 
@@ -458,3 +565,5 @@ string DBNCF::toString()
     return s.str();
 
 }
+
+
