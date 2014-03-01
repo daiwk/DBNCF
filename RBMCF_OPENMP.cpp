@@ -455,7 +455,7 @@ double RBMCF_OPENMP::test(string dataset) {
 string RBMCF_OPENMP::toString() {
     stringstream s;
     s << "Multi-threaded" << endl;
-    s << RBM::toString();
+    s << RBMCF::toString();
 
     return s.str();
 }

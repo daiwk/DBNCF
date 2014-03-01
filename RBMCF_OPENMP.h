@@ -14,7 +14,7 @@
 #include <string>
 
 #include "Dataset.h"
-#include "RBM.h"
+#include "RBMCF.h"
 
 using namespace std;
 

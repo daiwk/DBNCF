@@ -23,13 +23,13 @@
 
 
 // RBMBASIC::RBMBASIC() : RBM() 
-RBMBASIC::RBMBASIC() : RBMOpenMP() 
+RBMBASIC::RBMBASIC() : RBMCF_OPENMP() 
 {
 
 }
 
 // RBMBASIC::RBMBASIC(string filename) : RBM(filename) 
-RBMBASIC::RBMBASIC(string filename) : RBMOpenMP(filename) 
+RBMBASIC::RBMBASIC(string filename) : RBMCF_OPENMP(filename) 
 {
 
 }

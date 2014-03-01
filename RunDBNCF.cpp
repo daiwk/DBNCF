@@ -17,9 +17,8 @@
 
 #include "Configuration.h"
 #include "Dataset.h"
-#include "RBM.h"
-#include "RBMOpenMP.h"
-#include "RBM_P.h"
+#include "RBMCF.h"
+#include "RBMCF_OPENMP.h"
 
 #include "DBNCF.h"
 // #include <mpi.h>
@@ -126,7 +125,7 @@ int main(int argc, char** argv) {
     int layer_sizes[] = {20, 30, 30, 30};
     int layer_num = sizeof(layer_sizes) / sizeof(layer_sizes[0]);
 
-    DBNCF* dbncf = new DBNCF(Config::RBM::N, Config::RBM::M, layer_sizes, layer_num);
+    DBNCF* dbncf = new DBNCF();
     
     dbncf->addSet("LS", &LS);
     dbncf->addSet("VS", &VS);

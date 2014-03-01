@@ -7,6 +7,9 @@
  * - Last changes: April 15, 2010
  * ========================================================================= */
 
+// Modified by daiwenkai
+// Date: March 1, 2014
+
 #ifndef _CONFIGURATIONL_H_
 #define _CONFIGURATION_H_
 
@@ -159,7 +162,13 @@ namespace Config {
     }
 
     namespace DBNCF {
-        static const int TRAIN_EPOCHS = 1; // 只为DBN
+        static const int TRAIN_EPOCHS = 1; // DBN的训练轮数
+        static const int BATCH_SIZE = 50;  // 默认100;
+	// HL是HiddenLayer的缩写
+        static const int HL_SIZE = 20;  // 默认20;
+        static const int HL_NUM = 2;  // 默认2;
+        // Misc
+        static const bool VERBOSE = true;
     }
 
 }

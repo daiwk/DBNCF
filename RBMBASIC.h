@@ -6,11 +6,11 @@
 #define _RBMBASIC_H_
 
 
-#include "RBM.h"
-#include "RBMOpenMP.h"
+#include "RBMCF.h"
+#include "RBMCF_OPENMP.h"
 
-// class RBMBASIC : public RBM {
-class RBMBASIC : public RBMOpenMP {
+// class RBMBASIC : public RBM 
+class RBMBASIC : public RBMCF_OPENMP {
 // Constructors
 public:
     RBMBASIC();
