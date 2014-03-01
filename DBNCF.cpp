@@ -27,6 +27,9 @@ DBNCF::DBNCF() : Model(CLASS_DBNCF)
 {
 
     train_epochs = Config::DBNCF::TRAIN_EPOCHS;
+    setParameter("train_epochs", &train_epochs, sizeof(int));
+    batch_size = Config::DBNCF::BATCH_SIZE;
+    setParameter("batch_size", &batch_size, sizeof(int));
     
     // 初始化input_layer
     // input_layer是正常的rbmcf，使用原来的RBM参数,隐含层节点数使用配置值
@@ -40,11 +43,13 @@ DBNCF::DBNCF() : Model(CLASS_DBNCF)
     // 初始化hidden_layers
     // K=1, N=1, M=前一层的节点数
     hidden_layer_num = Config::DBNCF::HL_NUM;
+    setParameter("hidden_layer_num", &hidden_layer_num, sizeof(int));
 
     // 有hidden_layer_num个隐层，就有hidden_layer_num - 1个RBMBASIC
     hidden_layers = new RBMBASIC*[hidden_layer_num - 1]; 
     
     int sizes = Config::DBNCF::HL_SIZE;
+    setParameter("hidden_layer_size", &sizes, sizeof(int));
     
     // 使用默认构造函数，每层的节点数是一样的，从配置中读取
     for(int i = 0; i < hidden_layer_num; i++) {
@@ -128,6 +133,9 @@ DBNCF::DBNCF(string filename) : Model(CLASS_DBNCF)
     // 有hidden_layer_num个隐层，就有hidden_layer_num - 1个RBMBASIC
     hidden_layers = new RBMBASIC*[hidden_layer_num - 1]; 
 
+    // 可能每个隐层的节点数不一样，不过这里暂时假设是一样的，所以setPara的时候暂时只取第一个元素来代表全部
+    setParameter("hidden_layer_size", &hidden_layer_sizes[0], sizeof(int));
+
     for(int i = 0; i < hidden_layer_num - 1; i++) {
         char ss[1000];
         sprintf(ss, "hidden_layer-%d.rbm", i + 1);
@@ -175,9 +183,7 @@ DBNCF::~DBNCF()
 void DBNCF::train(string dataset, bool reset) {
     
     // Pop parameters
-    int epochs = *(int*) getParameter("epochs");
     int batch_size = *(int*) getParameter("batch_size");
-    int cd_steps = *(int*) getParameter("cd_steps");
     bool verbose = *(bool*) getParameter("verbose");
     ostream* out = *(ostream**) getParameter("log");
 
@@ -189,6 +195,9 @@ void DBNCF::train(string dataset, bool reset) {
 //        assert(QS != NULL);
 //        assert(LS->nb_rows == QS->nb_rows);
 //    }
+
+    input_layer->addSet(dataset, LS);
+    input_layer->addSet("QS", QS);
 
     for (int i = 0; i < hidden_layer_num - 1; i++) {
 
@@ -559,7 +568,7 @@ string DBNCF::toString()
     s << "Hidden layer num = " << *(int*) getParameter("hidden_layer_num") << endl;
     
     for(int i = 0; i < hidden_layer_num; i++) {
-    	s << "Hidden layer" << i << " size: " << *(int*) getParameter("hidden_layer_num") << endl;
+    	s << "Hidden layer" << i << " size: " << *(int*) getParameter("hidden_layer_size") << endl;
     }
 
     return s.str();
