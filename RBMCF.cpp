@@ -485,7 +485,7 @@ void RBMCF::train(string dataset, bool reset) {
     ofstream out_hb(hb_filename_out.c_str(), ios::out | ios::binary);
 
     if (out_hb.fail()) {
-        throw runtime_error("I/O exception! In openning rbm-hs-%d");
+        throw runtime_error("I/O exception! In openning rbm-hb-%d");
     }
     
     out_hb.write((char*) hb, F * sizeof (double));
@@ -1337,12 +1337,12 @@ void RBMCF::train_batch(string dataset, bool reset, int batch) {
 
     // 把hb的状态输出到文件，供RBMCF_P当做输入
 
-    sprintf(ss, "rbmcf-hb-%d", rbmlayers_id);
+    sprintf(ss, "rbm-hb-%d", rbmlayers_id);
     string hb_filename_out = ss; 
     ofstream out_hb(hb_filename_out.c_str(), ios::out | ios::binary);
 
     if (out_hb.fail()) {
-        throw runtime_error("I/O exception! In openning rbm-hs-%d");
+        throw runtime_error("I/O exception! In openning rbm-hb-%d");
     }
     
     out_hb.write((char*) hb, F * sizeof (double));
