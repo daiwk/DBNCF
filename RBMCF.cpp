@@ -1291,10 +1291,15 @@ void RBMCF::train_batch(string dataset, bool reset, int batch) {
                     hb_acc[j] -= hp[j];
                 }
             }
-
+            
+	    #pragma omp critical  
             // Update weights and biases
             update_w(w_acc, w_count, (epoch - 1) * LS->nb_rows + batch);
+	    
+	    #pragma omp critical  
             update_vb(vb_acc, vb_count, (epoch - 1) * LS->nb_rows + batch);
+	    
+	    #pragma omp critical  
             update_hb(hb_acc, (epoch - 1) * LS->nb_rows + batch);
 
             if (conditional) {

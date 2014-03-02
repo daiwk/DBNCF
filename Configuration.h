@@ -117,7 +117,7 @@ namespace Config {
         static const bool OPENMP = true;  // false;
 
         /* Training parameters */
-        static const int EPOCHS = 10;
+        static const int EPOCHS = 1;
         static const int BATCH_SIZE = 50;  // 100;
         static const int CD_STEPS = 1;
         static const double EPS_W = 0.0015;
@@ -145,7 +145,7 @@ namespace Config {
         static const bool OPENMP = true;// false;
 
         /* Training parameters */
-        static const int EPOCHS = 1000;
+        static const int EPOCHS = 1;
         static const int BATCH_SIZE = 1;
         static const int CD_STEPS = 1;
         static const double EPS_W = 0.0015;

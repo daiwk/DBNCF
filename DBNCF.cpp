@@ -15,6 +15,7 @@
 #include <stdexcept>
 #include <string>
 
+#include <omp.h>
 
 using namespace std;
 
@@ -205,10 +206,19 @@ void DBNCF::train(string dataset, bool reset) {
     input_layer->addSet("VS", VS);
     input_layer->addSet("TS", TS);
 
-    for (int i = 0; i < hidden_layer_num - 1; i++) {
+    // just test...
+    input_layer->train();
+
+    output_layer->addSet(dataset, LS);
+    output_layer->addSet("QS", QS);
+    output_layer->addSet("VS", VS);
+    output_layer->addSet("TS", TS);
+    
+    for (int i = 0; i < hidden_layer_num; i++) {
 
         for(int epoch = 0; epoch < train_epochs; epoch++) {
-               
+            
+	    // #pragma omp parallel for
             for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
 	        
 		    for (int l = 0; l <= i; l++) {
@@ -225,7 +235,7 @@ void DBNCF::train(string dataset, bool reset) {
 			    bool reset = false;
 			    
 			    // 注意下标：此函数读rbm-h*-l，输出rbm-h*-l+1
-                            hidden_layers[l - 1]->train_full(reset, l); 
+                            hidden_layers[l - 1]->train_full(reset, l - 1); 
                             printf("layer %d trained\n", l - 1); 
             
                             // 训练完后，要更新前一层rbm的隐含层的bias为本层的可见层的bias
@@ -274,7 +284,7 @@ void DBNCF::train(string dataset, bool reset) {
 
     // 训练完后，要更新前一层rbm的隐含层的bias为本层的可见层的bias
     int hidden_size = hidden_layers[hidden_layer_num - 1]->M;
-    printf("hidden_size of last hidden: %d\n", hidden_size);
+    printf("hidden_size of last hidden: %d\n", hidden_size - 1);
        
     for(int m = 0; m < hidden_size; m++) {
 

@@ -246,15 +246,15 @@ void RBMBASIC::train_full(bool reset = true, int rbmlayers_id = 0)
                     // 原来是对那些受影响的v+=1，现在是要更新所有v
                     vb_acc[_ik(i, k)] += 1.;
                     // 学习hb_acc，+= vp[]...不要乱搞。。。
-                    printf("1.vb_acc[%d]: %lf\n", _ik(i, k), vb_acc[_ik(i, k)]);
-                    printf("xx.vp[%d]: %lf\n", _ik(i, k), vp[_ik(i, k)]);
+                    // printf("1.vb_acc[%d]: %lf\n", _ik(i, k), vb_acc[_ik(i, k)]);
+                    // printf("xx.vp[%d]: %lf\n", _ik(i, k), vp[_ik(i, k)]);
                     // vb_acc[_ik(i, k)] += vp[_ik(i, k)];
                     printf("2.vb_acc[%d]: %lf\n", _ik(i, k), vb_acc[_ik(i, k)]);
                 }
 
                 for (int j = 0; j < F; j++) {
                     hb_acc[j] += hp[j];
-                    printf("hb_acc[%d]: %lf\n", j, hb_acc[j]);
+                    // printf("hb_acc[%d]: %lf\n", j, hb_acc[j]);
                 }
 
                 // Count seen movies
@@ -284,7 +284,7 @@ void RBMBASIC::train_full(bool reset = true, int rbmlayers_id = 0)
                     // Compute p(h | V, d) into hp
                     if (!conditional) {
                         update_hidden_p(vs, &mask_visible[0], M, hp);
-                        printf("finished second update hidden\n");
+                        // printf("finished second update hidden\n");
 //                        update_hidden(vs, &LS->ids[LS->index[n]], LS->count[n], hp);
                     } else {
 //                        update_hidden(vs, &LS->ids[LS->index[n]], LS->count[n], &QS->ids[QS->index[n]], QS->count[n], hp);
@@ -301,7 +301,7 @@ void RBMBASIC::train_full(bool reset = true, int rbmlayers_id = 0)
 
                     for (int k = 0; k < K; k++) {
                         int ik = ik_0 + k;
-                        printf("after cd, vs[%d]: %lf\n", ik, vs[ik]);
+                        // printf("after cd, vs[%d]: %lf\n", ik, vs[ik]);
 
                         for (int j = 0; j < F; j++) {
                             int ikj = _ikj(i, k, j);
@@ -314,7 +314,7 @@ void RBMBASIC::train_full(bool reset = true, int rbmlayers_id = 0)
                         vb_acc[ik] -= vs[ik];
                         vb_count[ik]++;
                         //vb_count[ik] = M * K;
-                        printf("vb_count[%d]: %d\n", ik, vb_count[ik]);
+                        // printf("vb_count[%d]: %d\n", ik, vb_count[ik]);
                     }
                 }
 
@@ -364,7 +364,7 @@ void RBMBASIC::train_full(bool reset = true, int rbmlayers_id = 0)
  
     // 把hb的状态输出到文件，供下一层当做vb的输入
 
-    sprintf(ss, "rbmbasic-hb-%d", rbmlayers_id + 1);
+    sprintf(ss, "rbm-hb-%d", rbmlayers_id + 1);
     string hb_filename_out = ss; 
     ofstream out_hb(hb_filename_out.c_str(), ios::out | ios::binary);
 
@@ -396,9 +396,7 @@ void RBMBASIC::train_full(bool reset = true, int rbmlayers_id = 0)
     // print running time
     gettimeofday(&end, NULL);
     usec = 1000000 * (end.tv_sec-start.tv_sec) + end.tv_usec - start.tv_usec;
-//    cout << "File: " << __FILE__ << ", Function: " << __FUNCTION__  << ", Line: " << __LINE__ << endl;
     printf( "File: %s, Function: %s, Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
-//    cout << "Time of train(): " << usec << " usec[" << usec / 1000000. <<" sec]." << endl;
     printf("Time of train_full(): %ld usec[ %lf sec].", usec, usec / 1000000.);
 }
 
@@ -407,9 +405,9 @@ void RBMBASIC::update_hidden_p(double* vs, int* mask, int mask_size, double* hp)
     // Compute p(h | V) into hp
     for (int j = 0; j < F; j++) {
         hp[j] = hb[j];
-        printf("out hp[%d]: %lf\n", j, hp[j]);
+        // printf("out hp[%d]: %lf\n", j, hp[j]);
     }
-    printf("mask size: %d\n", mask_size);
+    // printf("mask size: %d\n", mask_size);
 
     for (int m = 0; m < mask_size; m++) {
         int i = mask[m];
@@ -427,7 +425,7 @@ void RBMBASIC::update_hidden_p(double* vs, int* mask, int mask_size, double* hp)
 
     for (int j = 0; j < F; j++) {
         hp[j] = 1. / (1. + exp(-hp[j]));
-        printf("final hp[%d]: %lf\n", j, hp[j]);
+        // printf("final hp[%d]: %lf\n", j, hp[j]);
     }
 }
 
@@ -437,9 +435,9 @@ void RBMBASIC::update_visible_p(double* hs, double* vp, int* mask, int mask_size
     // 现在改成sigmoid(wh+b)
     for (int j = 0; j < M; j++) {
         vp[j] = vb[j];
-        printf("out vp[%d]: %lf\n", j, vp[j]);
+        // printf("out vp[%d]: %lf\n", j, vp[j]);
     }
-    printf("mask size: %d\n", mask_size);
+    // printf("mask size: %d\n", mask_size);
 
     for (int m = 0; m < mask_size; m++) {
         int i = mask[m];
@@ -457,7 +455,7 @@ void RBMBASIC::update_visible_p(double* hs, double* vp, int* mask, int mask_size
 
     for (int j = 0; j < M; j++) {
         vp[j] = 1. / (1. + exp(-vp[j]));
-        printf("final vp[%d]: %lf\n", j, vp[j]);
+        // printf("final vp[%d]: %lf\n", j, vp[j]);
     }
     
 }
@@ -513,19 +511,19 @@ void RBMBASIC::update_vb_p(double* vb_acc, int* vb_count, int nth) {
         for (int k = 0; k < K; k++) {
             int ik = ik_0 + k;
             
-            printf("vb[%d] before: %lf\n", ik, vb[ik]);
+            // printf("vb[%d] before: %lf\n", ik, vb[ik]);
 
             if (vb_count[ik] > 0) {
                 vb_acc[ik] /= vb_count[ik];
             }
 
-            printf("vb_inc[%d] before: %lf\n", ik, vb_inc[ik]);
+            // printf("vb_inc[%d] before: %lf\n", ik, vb_inc[ik]);
             vb_inc[ik] *= momentum;
             vb_inc[ik] += eps_vb * vb_acc[ik];
             vb[ik] += vb_inc[ik];
             
-            printf("vb_inc[%d] now: %lf\n", ik, vb_inc[ik]);
-            printf("vb[%d] now: %lf\n", ik, vb[ik]);
+            // printf("vb_inc[%d] now: %lf\n", ik, vb_inc[ik]);
+            // printf("vb[%d] now: %lf\n", ik, vb[ik]);
         }
     }
 }

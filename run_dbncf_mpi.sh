@@ -100,9 +100,9 @@ function main()
 	# params:
 	# $1: type(0: not openmp, 1: openmp)
 	# $2: F
-	run_small_mpi 1 28
+	#run_small_mpi 1 28
  #	run_small_mpi 0 28
-# 	run_full_mpi 1 20
+ 	run_full_mpi 1 28
  #	run_full 0 20
 
 }
