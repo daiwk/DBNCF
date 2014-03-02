@@ -30,9 +30,9 @@ function run_small_mpi()
 	echo "starting openmp ${type} at:"
 	eval ${date}
 
-	#run_cmd="./RunDBN 
-	#run_cmd="mpirun -machinefile ${machines} -np 4 RunDBN 
-	run_cmd="./RunDBN 
+	#run_cmd="./RunRBMCF 
+	#run_cmd="mpirun -machinefile ${machines} -np 4 RunRBMCF
+	run_cmd="./RunRBMCF
 		--LS ${LS}
 		--TS ${TS} 
 		--QS ${TS} 
@@ -67,8 +67,8 @@ function run_full_mpi()
 	echo "starting openmp ${type} at:"
 	eval ${date}
 
-	#run_cmd="mpirun -machinefile ${machines} -np 4 RunDBN 
-	run_cmd="./RunDBN 
+	#run_cmd="mpirun -machinefile ${machines} -np 4 RunRBMCF
+	run_cmd="./RunRBMCF
 		--LS ${LS}
 		--TS ${TS} 
 		--QS ${TS} 
@@ -93,6 +93,7 @@ function main()
 {
 
 	make clean && make -j 9
+	rm -rf *layer* rbm-*
 	init
 
 	# params:

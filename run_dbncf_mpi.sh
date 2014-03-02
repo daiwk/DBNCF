@@ -94,6 +94,7 @@ function main()
 {
 
 	make clean && make -j 9
+	rm -rf *layer* rbm-*
 	init
 
 	# params:

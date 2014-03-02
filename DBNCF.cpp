@@ -31,14 +31,6 @@ DBNCF::DBNCF() : Model(CLASS_DBNCF)
     batch_size = Config::DBNCF::BATCH_SIZE;
     setParameter("batch_size", &batch_size, sizeof(int));
     
-    // 初始化input_layer
-    // input_layer是正常的rbmcf，使用原来的RBM参数,隐含层节点数使用配置值
-    string input_layer_name = "input_layer.rbmcf";
-    RBMCF in_cf = RBMCF();
-    in_cf.setParameter("F", &hidden_layer_sizes[0], sizeof(int));
-    in_cf.reset();
-    in_cf.save(input_layer_name);
-    input_layer = new RBMCF(input_layer_name);
     
     // 初始化hidden_layers
     // K=1, N=1, M=前一层的节点数
@@ -56,15 +48,25 @@ DBNCF::DBNCF() : Model(CLASS_DBNCF)
     	hidden_layer_sizes[i] = sizes;
     }
 
+    // 初始化input_layer
+    // input_layer是正常的rbmcf，使用原来的RBM参数,隐含层节点数使用配置值
+    string input_layer_name = "input_layer.rbmcf";
+    RBMCF in_cf = RBMCF();
+    in_cf.setParameter("F", &hidden_layer_sizes[0], sizeof(int));
+    in_cf.reset();
+    in_cf.save(input_layer_name);
+    input_layer = new RBMCF(input_layer_name);
 
     for(int i = 0; i < hidden_layer_num - 1; i++) {
         char ss[1000];
-        sprintf(ss, "hidden_layer-%d.rbm", i + 1);
+        sprintf(ss, "hidden_layer-%d.rbm", i);
         string rbm_name = ss;
 
         RBMBASIC r = RBMBASIC();
         r.setParameter("M", &hidden_layer_sizes[i], sizeof(int));
         r.setParameter("F", &hidden_layer_sizes[i + 1], sizeof(int));
+        r.setParameter("N", &Config::RBMBASIC::N, sizeof(int));
+        r.setParameter("K", &Config::RBMBASIC::K, sizeof(int));
         r.reset();
         r.save(rbm_name);
         hidden_layers[i] = new RBMBASIC(rbm_name);
@@ -189,6 +191,8 @@ void DBNCF::train(string dataset, bool reset) {
 
     Dataset* LS = sets[dataset];
     Dataset* QS = sets["QS"];
+    Dataset* TS = sets["TS"];
+    Dataset* VS = sets["VS"];
     assert(LS != NULL);
 
 //    if (conditional) {
@@ -198,6 +202,8 @@ void DBNCF::train(string dataset, bool reset) {
 
     input_layer->addSet(dataset, LS);
     input_layer->addSet("QS", QS);
+    input_layer->addSet("VS", VS);
+    input_layer->addSet("TS", TS);
 
     for (int i = 0; i < hidden_layer_num - 1; i++) {
 
@@ -228,7 +234,7 @@ void DBNCF::train(string dataset, bool reset) {
                             
 			    for(int m = 0; m < hidden_size; m++) {
             
-                                double now_vb = hidden_layers[l]->vb[m];
+                                double now_vb = hidden_layers[l - 1]->vb[m];
 
 				// l=1: 第一个rbmbasic，它的上一层是input_layer
                                 if( l == 1) {
@@ -263,8 +269,24 @@ void DBNCF::train(string dataset, bool reset) {
     }  // End of for (int l = 0; l < hidden_layer_num - 1; l++)
 
     printf("after iterations...\n");
-    printf("generalization RMSE: %lf\n", input_layer->test());
-    printf("training RMSE: %lf\n", input_layer->test("LS"));
+    printf("input generalization RMSE: %lf\n", input_layer->test());
+    printf("input training RMSE: %lf\n", input_layer->test("LS"));
+
+    // 训练完后，要更新前一层rbm的隐含层的bias为本层的可见层的bias
+    int hidden_size = hidden_layers[hidden_layer_num - 1]->M;
+    printf("hidden_size of last hidden: %d\n", hidden_size);
+       
+    for(int m = 0; m < hidden_size; m++) {
+
+        double now_vb = hidden_layers[hidden_layer_num - 1]->vb[m];
+    
+        output_layer->hb[m] = now_vb;
+        printf("output now_hb: %lf\n ", output_layer->hb[m]);
+    }
+
+
+    printf("output generalization RMSE: %lf\n", output_layer->test());
+    printf("output training RMSE: %lf\n", output_layer->test("LS"));
     // 可以用openmp并行
     char ss[1000];
     sprintf(ss, "rbm-%d", 0);

@@ -162,7 +162,7 @@ namespace Config {
     }
 
     namespace DBNCF {
-        static const int TRAIN_EPOCHS = 1; // DBN的训练轮数
+        static const int TRAIN_EPOCHS = 10; // DBN的训练轮数
         static const int BATCH_SIZE = 50;  // 默认100;
 	// HL是HiddenLayer的缩写
         static const int HL_SIZE = 20;  // 默认20;
