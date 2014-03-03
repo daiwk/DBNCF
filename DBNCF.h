@@ -36,6 +36,7 @@ public:
    
     // DBNCF的函数
     virtual void train_separate(string dataset="LS", bool reset=true);
+    virtual void finetune(string dataset="QS");
     
     // 成员变量
     // 可以通过读配置文件Configuration.h得到

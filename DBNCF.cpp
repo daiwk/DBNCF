@@ -207,7 +207,7 @@ void DBNCF::train(string dataset, bool reset) {
     input_layer->addSet("TS", TS);
 
     // just test...
-    input_layer->train();
+//    input_layer->train();
 
     output_layer->addSet(dataset, LS);
     output_layer->addSet("QS", QS);
@@ -218,7 +218,7 @@ void DBNCF::train(string dataset, bool reset) {
 
         for(int epoch = 0; epoch < train_epochs; epoch++) {
             
-	    // #pragma omp parallel for
+	    #pragma omp parallel for
             for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
 	        
 		    for (int l = 0; l <= i; l++) {
@@ -229,6 +229,8 @@ void DBNCF::train(string dataset, bool reset) {
 			    // sample h from v
 			    bool reset = false;
                             input_layer->train_batch(dataset, reset, batch);
+
+			    //将训练出来的结果给下一层用【train_full里一开始时候就有一个read的操作了,读前一个rbm的hb和vb】
 		        }
 		        else {
                             // sample hl from hl-1
@@ -238,6 +240,9 @@ void DBNCF::train(string dataset, bool reset) {
                             hidden_layers[l - 1]->train_full(reset, l - 1); 
                             printf("layer %d trained\n", l - 1); 
             
+			    // 注意：在train_batch函数中实现了：
+			    // 首先读前一层的hs, hb到vs, vb中；然后训练；最后存本层hs,hb到文件中
+			    // 所以，训练后不用往后考虑，只要往前考虑：
                             // 训练完后，要更新前一层rbm的隐含层的bias为本层的可见层的bias
 			    int hidden_size = hidden_layers[l - 1]->M;
                             printf("hidden_size: %d\n", hidden_size);
@@ -282,18 +287,23 @@ void DBNCF::train(string dataset, bool reset) {
     printf("input generalization RMSE: %lf\n", input_layer->test());
     printf("input training RMSE: %lf\n", input_layer->test("LS"));
 
-    // 训练完后，要更新前一层rbm的隐含层的bias为本层的可见层的bias
-    int hidden_size = hidden_layers[hidden_layer_num - 1]->M;
-    printf("hidden_size of last hidden: %d\n", hidden_size - 1);
-       
-    for(int m = 0; m < hidden_size; m++) {
-
-        double now_vb = hidden_layers[hidden_layer_num - 1]->vb[m];
+    // 训练完后，要更新output_layer的隐藏层参数为最后一个隐藏层的参数
+    // （由于output_layer其实是一个倒置的CRBM）
+    // 即他的h就是最后一个隐层的h
     
-        output_layer->hb[m] = now_vb;
+    int output_hidden_size = hidden_layers[hidden_layer_num - 2]->F;
+    printf("output_hidden_size of last hidden: %d\n", output_hidden_size - 1);
+    
+    // 将最后一个隐层的bias赋值给output的隐层的bias
+    for(int m = 0; m < output_hidden_size; m++) {
+
+        double now_hb = hidden_layers[hidden_layer_num - 2]->hb[m];
+    
+        output_layer->hb[m] = now_hb;
         printf("output now_hb: %lf\n ", output_layer->hb[m]);
     }
 
+    int output_size = output_layer->F;
 
     printf("output generalization RMSE: %lf\n", output_layer->test());
     printf("output training RMSE: %lf\n", output_layer->test("LS"));
@@ -372,6 +382,12 @@ void DBNCF::train_separate(string dataset, bool reset)
     }
 
 }
+
+void DBNCF::finetune(string dataset)
+{
+    
+}
+
 
 double DBNCF::test(string dataset) 
 {
