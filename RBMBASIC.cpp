@@ -154,8 +154,8 @@ void RBMBASIC::train_full(bool reset = true, int rbmlayers_id = 0)
 
     in_hs.close();
 
-    for(int dd = 0; dd < M * K; dd++)
-        printf("after reading from file: vs[%d]: %lf\n", dd, vs[dd]);
+    // for(int dd = 0; dd < M * K; dd++)
+    //     printf("after reading from file: vs[%d]: %lf\n", dd, vs[dd]);
 
     // 读取上一层的hb到这层的vb里面    
     sprintf(ss, "rbm-hb-%d", rbmlayers_id);
@@ -170,8 +170,8 @@ void RBMBASIC::train_full(bool reset = true, int rbmlayers_id = 0)
 
     in_hb.close();
 
-    for(int dd = 0; dd < M * K; dd++)
-        printf("after reading from file: vb[%d]: %lf\n", dd, vb[dd]);
+    // for(int dd = 0; dd < M * K; dd++)
+    //     printf("after reading from file: vb[%d]: %lf\n", dd, vb[dd]);
     
     // Loop through epochs
     for (int epoch = 1; epoch <= epochs; epoch++) {
@@ -225,7 +225,7 @@ void RBMBASIC::train_full(bool reset = true, int rbmlayers_id = 0)
                 if (!conditional) {
 //                    update_hidden(vs, &LS->ids[LS->index[n]], LS->count[n], hp);
                     update_hidden_p(vs, &mask_visible[0], M, hp);
-                    printf("finished first update hidden\n");
+//                    printf("finished first update hidden\n");
                 } else {
 //                    update_hidden(vs, &LS->ids[LS->index[n]], LS->count[n], &QS->ids[QS->index[n]], QS->count[n], hp);
                 }
@@ -249,7 +249,7 @@ void RBMBASIC::train_full(bool reset = true, int rbmlayers_id = 0)
                     // printf("1.vb_acc[%d]: %lf\n", _ik(i, k), vb_acc[_ik(i, k)]);
                     // printf("xx.vp[%d]: %lf\n", _ik(i, k), vp[_ik(i, k)]);
                     // vb_acc[_ik(i, k)] += vp[_ik(i, k)];
-                    printf("2.vb_acc[%d]: %lf\n", _ik(i, k), vb_acc[_ik(i, k)]);
+//                    printf("2.vb_acc[%d]: %lf\n", _ik(i, k), vb_acc[_ik(i, k)]);
                 }
 
                 for (int j = 0; j < F; j++) {
@@ -326,7 +326,7 @@ void RBMBASIC::train_full(bool reset = true, int rbmlayers_id = 0)
             // Update weights and biases
             // 参数3是用来算annealing rate用的
             update_w_p(w_acc, w_count, (epoch - 1) * N + batch);
-            printf("last update_vb\n");
+//            printf("last update_vb\n");
             update_vb_p(vb_acc, vb_count, (epoch - 1) * N + batch);
             update_hb_p(hb_acc, (epoch - 1) * N + batch);
 
@@ -375,11 +375,11 @@ void RBMBASIC::train_full(bool reset = true, int rbmlayers_id = 0)
     out_hb.write((char*) hb, F * sizeof (double));
     out_hb.close();
    
-    for(int dd = 0; dd < M; dd++)
-        printf("after train_full: vb[%d]: %lf\n", dd, vb[dd]);
-
-    for(int dd = 0; dd < F; dd++)
-        printf("after train_full: hb[%d]: %lf\n", dd, hb[dd]);
+//    for(int dd = 0; dd < M; dd++)
+//        printf("after train_full: vb[%d]: %lf\n", dd, vb[dd]);
+//
+//    for(int dd = 0; dd < F; dd++)
+//        printf("after train_full: hb[%d]: %lf\n", dd, hb[dd]);
     // Deallocate data structures
     if (vs != NULL) delete[] vs;
     if (vp != NULL) delete[] vp;

@@ -539,8 +539,8 @@ double RBMCF::test(string dataset) {
     double* hp = new double[F];
 
 
-    for(int i = 0; i < F; i++)
-        printf("testing hb[%d]: %lf\n", i, hb[i]);
+//    for(int i = 0; i < F; i++)
+//        printf("testing hb[%d]: %lf\n", i, hb[i]);
     // Initialization
     double total_error = 0.;
     int count = 0;
@@ -592,14 +592,14 @@ double RBMCF::test(string dataset) {
         }
     }
 
-//    // Deallocate data structure
-//    if (vs != NULL) { 
-//        delete[] vs; 
-//        vs = NULL; 
-//    }
-//    if (vp != NULL) { delete[] vp; vp = NULL; }
-//    if (hs != NULL) { delete[] hs; hs = NULL; }
-//    if (hp != NULL) { delete[] hp; hp = NULL; }
+    // Deallocate data structure
+    if (vs != NULL) { 
+        delete[] vs; 
+        vs = NULL; 
+    }
+    if (vp != NULL) { delete[] vp; vp = NULL; }
+    if (hs != NULL) { delete[] hs; hs = NULL; }
+    if (hp != NULL) { delete[] hp; hp = NULL; }
 
     // cout << "total_error: " << total_error << " count: " << count << endl;
     
@@ -610,7 +610,7 @@ double RBMCF::test(string dataset) {
 //    cout << "File: " << __FILE__ << ", Function: " << __FUNCTION__  << ", Line: " << __LINE__ << endl;
     printf( "File: %s, Function: %s, Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
 //    cout << "Time of test(): " << usec << " usec[" << usec / 1000000. <<" sec]." << endl;
-    printf("Time of test(): %ld usec[ %lf sec].", usec, usec / 1000000.);
+    printf("Time of test(): %ld usec[ %lf sec].\n", usec, usec / 1000000.);
     return sqrt(total_error / count);
 }
 
@@ -1292,14 +1292,14 @@ void RBMCF::train_batch(string dataset, bool reset, int batch) {
                 }
             }
             
-	    #pragma omp critical  
+//	    #pragma omp critical  
             // Update weights and biases
             update_w(w_acc, w_count, (epoch - 1) * LS->nb_rows + batch);
 	    
-	    #pragma omp critical  
+//	    #pragma omp critical  
             update_vb(vb_acc, vb_count, (epoch - 1) * LS->nb_rows + batch);
 	    
-	    #pragma omp critical  
+//	    #pragma omp critical  
             update_hb(hb_acc, (epoch - 1) * LS->nb_rows + batch);
 
             if (conditional) {
@@ -1334,8 +1334,8 @@ void RBMCF::train_batch(string dataset, bool reset, int batch) {
         throw runtime_error("I/O exception! In openning rbm-hs-%d");
     }
     
-    for(int dd = 0; dd < F; dd++)
-        printf("after train: hs[%d]: %lf\n", dd, hs[dd]);
+//    for(int dd = 0; dd < F; dd++)
+//        printf("after train: hs[%d]: %lf\n", dd, hs[dd]);
     
     out_hs.write((char*) hs, F * sizeof (double));
     out_hs.close();
