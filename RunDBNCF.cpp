@@ -33,8 +33,8 @@ using namespace boost::program_options;
 
 int main(int argc, char** argv) {
 
-		//    int myid, numprocs;
-	//    int namelen;
+  //    int myid, numprocs;
+  //    int namelen;
   //    char processor_name[MPI_MAX_PROCESSOR_NAME];
   //
   //    MPI_Init (&argc, &argv);
@@ -177,9 +177,22 @@ int main(int argc, char** argv) {
 		  r->setParameter("log", &log, sizeof(ostream*));
 		  }
 		  */    
-		cout << "training..." << endl;
+		printf("training...\n");
 		// Train!
 		dbncf->train();
+
+        printf("####after training, use full network to predict...\n");
+		printf("generalization RMSE: %lf\n", dbncf->test("TS"));
+		printf("training RMSE: %lf\n\n", dbncf->test("LS"));
+	
+	    dbncf->finetune();
+		printf("####after finetune, use full network to predict...\n");
+		printf("generalization RMSE: %lf\n", dbncf->test());
+		printf("training RMSE: %lf\n\n", dbncf->test("LS"));
+
+    	//printf("####after finetune, only use output layer to predict..\n");
+		//printf("generalization RMSE: %lf\n", dbncf->output_layer->test());
+		//printf("training RMSE: %lf\n\n", dbncf->output_layer->test("LS"));
 		// dbncf->finetune("LS");
 
 		// double RMSE= dbncf->test("TS");

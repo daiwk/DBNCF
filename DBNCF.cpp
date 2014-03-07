@@ -304,7 +304,7 @@ void DBNCF::train(string dataset, bool reset) {
 	// 即他的h就是最后一个隐层的h
 
 	int output_hidden_size = hidden_layers[hidden_layer_num - 2]->F;
-	printf("output_hidden_size of last hidden: %d\n", output_hidden_size - 1);
+	printf("output_hidden_size of last hidden: %d\n", output_hidden_size);
 
 	// 将最后一个隐层的bias赋值给output的隐层的bias
 	for(int m = 0; m < output_hidden_size; m++) {
@@ -315,11 +315,23 @@ void DBNCF::train(string dataset, bool reset) {
 		// printf("output now_hb: %lf\n ", output_layer->hb[m]);
 	}
 
-	int output_size = output_layer->F;
+    for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
+		bool reset = false;
+		output_layer->train_batch(dataset, reset, batch);
+	}
 
-    printf("####after training, only use output layer to predict..\n");
-	printf("generalization RMSE: %lf\n", output_layer->test());
-	printf("training RMSE: %lf\n", output_layer->test("LS"));
+	// 将最后一个隐层的bias赋值给output的隐层的bias
+	for(int m = 0; m < output_hidden_size; m++) {
+
+		double now_hb = output_layer->hb[m];
+
+    	hidden_layers[hidden_layer_num - 2]->hb[m] = now_hb;
+		// printf("output now_hb: %lf\n ", output_layer->hb[m]);
+	}
+
+//  printf("####after training, only use output layer to predict..\n");
+//	printf("generalization RMSE: %lf\n", output_layer->test());
+//	printf("training RMSE: %lf\n\n", output_layer->test("LS"));
 	// 可以用openmp并行
 	char ss[1000];
 	sprintf(ss, "rbm-%d", 0);
@@ -333,74 +345,7 @@ void DBNCF::train(string dataset, bool reset) {
 		hidden_layers[i]->save(rbm_name);
 	}
     
-	printf("####after training, use full network to predict...\n");
-	printf("generalization RMSE: %lf\n", test());
-	printf("training RMSE: %lf\n", test("LS"));
 
-    finetune();
-	printf("####after finetune, use full network to predict...\n");
-	printf("generalization RMSE: %lf\n", output_layer->test());
-	printf("training RMSE: %lf\n", output_layer->test("LS"));
-
-
-}
-
-// DBNCF的函数
-void DBNCF::train_separate(string dataset, bool reset)
-{
-
-	printf("DBNCF epochs: %d\n", train_epochs);
-	input_layer->train();
-	printf("before iterations...\n");
-	printf("RMSE: %lf\n", input_layer->test());
-	printf("training RMSE: %lf\n", input_layer->test("LS"));
-	printf("input_layer trained\n");
-
-	for(int i = 0; i < hidden_layer_num - 1; i++) {
-
-		for(int epoch = 0; epoch < train_epochs; epoch++) {
-
-			bool reset = false; 
-			hidden_layers[i]->train_full(reset, i); //注意下。。
-			printf("layer %d trained\n", i); 
-
-			int hidden_size = hidden_layers[i]->M;
-			printf("hidden_size: %d\n", hidden_size);
-			for(int m = 0; m < hidden_size; m++) {
-
-				double now_vb = hidden_layers[i]->vb[m];
-				printf("now_vb: %lf ", now_vb);
-				if( i == 0) {
-					// input_layer->hb[m] = hidden_layers[i]->vb[m];
-					input_layer->hb[m] = now_vb;
-					printf("rbm0: %lf\n ", input_layer->hb[m]);
-				}
-				else {
-					// hidden_layers[i - 1]->hb[m] = hidden_layers[i]->vb[m];
-					hidden_layers[i - 1]->hb[m] = now_vb;
-					printf("rbm: %lf\n ", hidden_layers[i - 1]->hb[m]);
-				}
-			}
-
-
-		}
-	}
-
-	printf("after iterations...\n");
-	printf("generalization RMSE: %lf\n", input_layer->test());
-	printf("training RMSE: %lf\n", input_layer->test("LS"));
-	// 可以用openmp并行
-	char ss[1000];
-	sprintf(ss, "rbm-%d", 0);
-	string rbm_name = ss;
-	input_layer->save(rbm_name);
-
-	for(int i = 0; i < hidden_layer_num - 1; i++) {
-		char ss[1000];
-		sprintf(ss, "rbm-%d", i + 1);
-		string rbm_name = ss;
-		hidden_layers[i]->save(rbm_name);
-	}
 
 }
 
@@ -481,7 +426,7 @@ void DBNCF::finetune(string dataset)
 	double** w_acc = new double* [hidden_layer_num];
 	double** b_acc = new double* [hidden_layer_num];
 
-	for (int l = 0; l < hidden_layer_num; l++) {
+	for (int l = 0; l < hidden_layer_num - 1; l++) {
 
 		int hidden_M = hidden_layers[l]->M;
 		int hidden_K = hidden_layers[l]->K;
@@ -493,7 +438,10 @@ void DBNCF::finetune(string dataset)
 
 	}
 
-	delta[hidden_layer_num] = new double[output_layer->M];  
+	delta[hidden_layer_num - 1] = new double[output_layer->M];  
+    w_acc[hidden_layer_num - 1] = new double[output_layer->M];  
+	b_acc[hidden_layer_num - 1] = new double[output_layer->M];  
+	delta[hidden_layer_num] = new double[output_layer->F];  
 
 	for(int epoch = 0; epoch < train_epochs; epoch++) {
 
@@ -543,11 +491,6 @@ void DBNCF::finetune(string dataset)
 				int hidden_M = hidden_layers[l]->M;
 				int hidden_K = hidden_layers[l]->K;
 				int hidden_F = hidden_layers[l]->F;
-
-//				hidden_vs[l] = new double[hidden_M * hidden_K];
-//				hidden_vp[l] = new double[hidden_M * hidden_K];
-//				hidden_hs[l] = new double[hidden_F];
-//				hidden_hp[l] = new double[hidden_F];
 
 				for (int i = 0; i < hidden_M; i++) {
 					if (l == 0) {
@@ -893,7 +836,7 @@ double DBNCF::test(string dataset)
     usec = 1000000 * (end.tv_sec-start.tv_sec) + end.tv_usec - start.tv_usec;
 
     printf( "File: %s, Function: %s, Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
-    printf("Time of test(): %ld usec[ %lf sec].", usec, usec / 1000000.);
+    printf("Time of test(): %ld usec[ %lf sec]\n.", usec, usec / 1000000.);
  
     return sqrt(total_error / count);
 }
@@ -1130,6 +1073,65 @@ string DBNCF::toString()
 	}
 
 	return s.str();
+
+}
+
+// DBNCF的函数
+void DBNCF::train_separate(string dataset, bool reset)
+{
+
+	printf("DBNCF epochs: %d\n", train_epochs);
+	input_layer->train();
+	printf("before iterations...\n");
+	printf("RMSE: %lf\n", input_layer->test());
+	printf("training RMSE: %lf\n", input_layer->test("LS"));
+	printf("input_layer trained\n");
+
+	for(int i = 0; i < hidden_layer_num - 1; i++) {
+
+		for(int epoch = 0; epoch < train_epochs; epoch++) {
+
+			bool reset = false; 
+			hidden_layers[i]->train_full(reset, i); //注意下。。
+			printf("layer %d trained\n", i); 
+
+			int hidden_size = hidden_layers[i]->M;
+			printf("hidden_size: %d\n", hidden_size);
+			for(int m = 0; m < hidden_size; m++) {
+
+				double now_vb = hidden_layers[i]->vb[m];
+				printf("now_vb: %lf ", now_vb);
+				if( i == 0) {
+					// input_layer->hb[m] = hidden_layers[i]->vb[m];
+					input_layer->hb[m] = now_vb;
+					printf("rbm0: %lf\n ", input_layer->hb[m]);
+				}
+				else {
+					// hidden_layers[i - 1]->hb[m] = hidden_layers[i]->vb[m];
+					hidden_layers[i - 1]->hb[m] = now_vb;
+					printf("rbm: %lf\n ", hidden_layers[i - 1]->hb[m]);
+				}
+			}
+
+
+		}
+	}
+
+	printf("after iterations...\n");
+	printf("generalization RMSE: %lf\n", input_layer->test());
+	printf("training RMSE: %lf\n", input_layer->test("LS"));
+	// 可以用openmp并行
+	char ss[1000];
+	sprintf(ss, "rbm-%d", 0);
+	string rbm_name = ss;
+	input_layer->save(rbm_name);
+
+	for(int i = 0; i < hidden_layer_num - 1; i++) {
+		char ss[1000];
+		sprintf(ss, "rbm-%d", i + 1);
+		string rbm_name = ss;
+		hidden_layers[i]->save(rbm_name);
+	}
 
 }
 
