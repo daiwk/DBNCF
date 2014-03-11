@@ -1334,12 +1334,24 @@ void RBMCF::train_batch(string dataset, bool reset, int batch) {
     if (out_hs.fail()) {
         throw runtime_error("I/O exception! In openning rbm-hs-%d");
     }
+ 
+    // 把hs的状态输出到文件，供RBMCF_P当做输入
+
+
+    // 只有rbmlayers_id=0（最开始那层）的时候才调用这个train函数，其他层调用的是train_full函数
+    sprintf(ss, "rbm-hp-%d", rbmlayers_id);
+    string hp_filename = ss; 
+    ofstream out_hp(hp_filename.c_str(), ios::out | ios::binary);
+
+    if (out_hp.fail()) {
+        throw runtime_error("I/O exception! In openning rbm-hs-%d");
+    }
     
 //    for(int dd = 0; dd < F; dd++)
-//        printf("after train: hs[%d]: %lf\n", dd, hs[dd]);
+//        printf("after train: hp[%d]: %lf\n", dd, hp[dd]);
     
-    out_hs.write((char*) hs, F * sizeof (double));
-    out_hs.close();
+    out_hp.write((char*) hp, F * sizeof (double));
+    out_hp.close();
 
     // 把hb的状态输出到文件，供RBMCF_P当做输入
 

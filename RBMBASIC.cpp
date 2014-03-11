@@ -137,7 +137,7 @@ void RBMBASIC::train_full(bool reset = true, int rbmlayers_id = 0)
 //    if (conditional) {
 //        watched = new bool[M];
 //    }
-    
+ 
     char ss[1000];
     // 只有id=0（最开始那层）的时候才调用这个train函数，其他层调用的是train_full函数
     
@@ -156,6 +156,23 @@ void RBMBASIC::train_full(bool reset = true, int rbmlayers_id = 0)
 
     // for(int dd = 0; dd < M * K; dd++)
     //     printf("after reading from file: vs[%d]: %lf\n", dd, vs[dd]);
+
+	// 读取上一层的hp到这层的vs来！！！注意，直接把上一层的后验概率作为本层的输入。。
+    sprintf(ss, "rbm-hp-%d", rbmlayers_id);
+    string hp_filename_in = ss; 
+
+    ifstream in_hp(hp_filename_in.c_str(), ios::in | ios::binary);
+    if (in_hp.fail()) {
+        throw runtime_error("I/O exception");
+    }
+    
+    in_hp.read((char*) vs, M * K * sizeof (double));
+
+    in_hp.close();
+
+    // for(int dd = 0; dd < M * K; dd++)
+    //     printf("after reading from file: vs[%d]: %lf\n", dd, vs[dd]);
+
 
     // 读取上一层的hb到这层的vb里面    
     sprintf(ss, "rbm-hb-%d", rbmlayers_id);
