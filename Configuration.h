@@ -117,7 +117,7 @@ namespace Config {
         static const bool OPENMP = true;  // false;
 
         /* Training parameters */
-        static const int EPOCHS = 1;
+        static const int EPOCHS = 10;
         static const int BATCH_SIZE = 1000;
         static const int CD_STEPS = 1;
         static const double EPS_W = 0.0015;
@@ -162,11 +162,11 @@ namespace Config {
     }
 
     namespace DBNCF {
-        static const int TRAIN_EPOCHS = 1; // DBN的训练轮数
+        static const int TRAIN_EPOCHS = 10; // DBN的训练轮数
         static const int BATCH_SIZE = 1000;  // 默认100;
 	// HL是HiddenLayer的缩写
-        static const int HL_SIZE = 200;  // 默认20;
-        static const int HL_NUM = 2;  // 默认2;
+        static const int HL_SIZE = 2;  // 默认20;
+        static const int HL_NUM = 3;  // 默认2;
         // Misc
         static const bool VERBOSE = true;
     }

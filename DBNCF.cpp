@@ -46,6 +46,7 @@ DBNCF::DBNCF() : Model(CLASS_DBNCF)
 	int sizes = Config::DBNCF::HL_SIZE;
 	setParameter("hidden_layer_size", &sizes, sizeof(int));
 
+	hidden_layer_sizes = new int[hidden_layer_num];
 	// 使用默认构造函数，每层的节点数是一样的，从配置中读取
 	for(int i = 0; i < hidden_layer_num; i++) {
 		hidden_layer_sizes[i] = sizes;
@@ -185,7 +186,30 @@ DBNCF::~DBNCF()
 }
 
 // Model的函数
-void DBNCF::train(string dataset, bool reset) {
+void DBNCF::train(string dataset, bool reset) 
+{
+	pretrain(dataset, reset);
+    printf("####after training, use full network to predict...\n");
+	printf("generalization RMSE: %lf\n", test("TS"));
+	printf("training RMSE: %lf\n\n", test("LS"));
+
+    finetune();
+	printf("####after finetune, use full network to predict...\n");
+	printf("generalization RMSE: %lf\n", test());
+	printf("training RMSE: %lf\n\n", test("LS"));
+
+	//printf("####after finetune, only use output layer to predict..\n");
+	//printf("generalization RMSE: %lf\n", dbncf->output_layer->test());
+	//printf("training RMSE: %lf\n\n", dbncf->output_layer->test("LS"));
+	// dbncf->finetune("LS");
+
+
+}
+
+
+
+void DBNCF::pretrain(string dataset, bool reset) 
+{
 
 	// Pop parameters
 	int batch_size = *(int*) getParameter("batch_size");
@@ -195,6 +219,8 @@ void DBNCF::train(string dataset, bool reset) {
 	ostream* out = *(ostream**) getParameter("log");
 
 	Dataset* LS = sets[dataset];
+
+	cout<<"LS->nb_rows:"<<LS->nb_rows<<endl;
 	Dataset* QS = sets["QS"];
 	Dataset* TS = sets["TS"];
 	Dataset* VS = sets["VS"];
@@ -218,13 +244,16 @@ void DBNCF::train(string dataset, bool reset) {
 	output_layer->addSet("VS", VS);
 	output_layer->addSet("TS", TS);
 
-//    #pragma omp parallel
+	*out <<"EPOch\tgen-RMSE\ttrain-RMSE\tinput\\full\\out\n";
+	out->flush();
+
+    #pragma omp parallel
 	{
 	for (int i = 0; i < hidden_layer_num; i++) {
 
 		for(int epoch = 0; epoch < train_epochs; epoch++) {
 
-//#pragma omp for schedule(guided)
+			#pragma omp for schedule(guided)
 			for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
 
 				printf("\nbatch: %d,\n", batch);
@@ -289,12 +318,32 @@ void DBNCF::train(string dataset, bool reset) {
 				}
 
 			}  // End of for (int batch = 0; batch < LS->nb_rows; batch += batch_size)
+		    
+			#pragma omp single
+			{
+			cout << "calc input rmse...\n";
+			char rmse_input[1000];
+			sprintf(rmse_input, "%d\t%lf\t%lf\tinput\n", epoch, input_layer->test("TS"), input_layer->test("LS"));
+			*out << rmse_input;
+
+			cout << "calc full rmse...\n";
+		    char rmse_full[1000];
+			sprintf(rmse_full, "%d\t%lf\t%lf\tfull\n", epoch, test("TS"), test("LS"));
+			*out << rmse_full;
+		    
+			cout << "calc output rmse...\n";
+			char rmse_output[1000];
+			sprintf(rmse_output, "%d\t%lf\t%lf\toutput\n", epoch, output_layer->test("TS"), output_layer->test("LS"));
+			*out << rmse_output;
+			
+			out->flush();
+			}
 		}  // End of for(int epoch = 0; epoch < train_epochs; epoch++)
 	}  // End of for (int l = 0; l < hidden_layer_num - 1; l++)
 
 	} //End of #pragma omp parallel
 
-	printf("####only use input layer to predict...\n");
+	printf("\n####after pretrain, only use input layer to predict...\n");
 //	#pragma omp single
 	printf("generalization RMSE: %lf\n", input_layer->test());
 	printf("training RMSE: %lf\n", input_layer->test("LS"));
@@ -320,7 +369,7 @@ void DBNCF::train(string dataset, bool reset) {
 		output_layer->train_batch(dataset, reset, batch);
 	}
 
-	// 将最后一个隐层的bias赋值给output的隐层的bias
+	// 将output的隐层的bias赋值给最后一个隐层
 	for(int m = 0; m < output_hidden_size; m++) {
 
 		double now_hb = output_layer->hb[m];
@@ -329,9 +378,9 @@ void DBNCF::train(string dataset, bool reset) {
 		// printf("output now_hb: %lf\n ", output_layer->hb[m]);
 	}
 
-//  printf("####after training, only use output layer to predict..\n");
-//	printf("generalization RMSE: %lf\n", output_layer->test());
-//	printf("training RMSE: %lf\n\n", output_layer->test("LS"));
+	printf("\n####after pretrain, only use output layer to predict..\n");
+	printf("generalization RMSE: %lf\n", output_layer->test());
+	printf("training RMSE: %lf\n\n", output_layer->test("LS"));
 	// 可以用openmp并行
 	char ss[1000];
 	sprintf(ss, "rbm-%d", 0);
@@ -344,8 +393,6 @@ void DBNCF::train(string dataset, bool reset) {
 		string rbm_name = ss;
 		hidden_layers[i]->save(rbm_name);
 	}
-    
-
 
 }
 
@@ -445,7 +492,7 @@ void DBNCF::finetune(string dataset)
 
 	for(int epoch = 0; epoch < train_epochs; epoch++) {
 
-//#pragma omp parallel for
+#pragma omp parallel for
 		for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
 
 			// 每个batch,首先赋值给input的vs，然后得到hp，再得到hs
@@ -676,7 +723,7 @@ double DBNCF::test(string dataset)
 
 	for(int epoch = 0; epoch < train_epochs; epoch++) {
 
-//#pragma omp parallel for
+#pragma omp parallel for
 		for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
 
 			// 每个batch,首先赋值给input的vs，然后得到hp，再得到hs
@@ -836,7 +883,7 @@ double DBNCF::test(string dataset)
     usec = 1000000 * (end.tv_sec-start.tv_sec) + end.tv_usec - start.tv_usec;
 
     printf( "File: %s, Function: %s, Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
-    printf("Time of test(): %ld usec[ %lf sec]\n.", usec, usec / 1000000.);
+    printf("Time of test(): %ld usec[ %lf sec].\n", usec, usec / 1000000.);
  
     return sqrt(total_error / count);
 }

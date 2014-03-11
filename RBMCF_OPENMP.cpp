@@ -334,10 +334,8 @@ void RBMCF_OPENMP::train(string dataset, bool reset) {
     // print running time
     gettimeofday(&end, NULL);
     usec = 1000000 * (end.tv_sec-start.tv_sec) + end.tv_usec - start.tv_usec;
-//    cout << "File: " << __FILE__ << ", Function: " << __FUNCTION__  << ", Line: " << __LINE__ << endl;
     printf( "File: %s, Function: %s, Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
-//    cout << "Time of train(): " << usec << " usec[" << usec / 1000000. <<" sec]." << endl;
-    printf("Time of train(): %ld usec[ %lf sec].", usec, usec / 1000000.);
+    printf("Time of train(): %ld usec[ %lf sec].\n", usec, usec / 1000000.);
 }
 
 double RBMCF_OPENMP::test(string dataset) {

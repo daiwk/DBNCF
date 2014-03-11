@@ -35,8 +35,9 @@ public:
     virtual string toString();
    
     // DBNCF的函数
-    virtual void train_separate(string dataset="LS", bool reset=true);
+    virtual void pretrain(string dataset="LS", bool reset=true);
     virtual void finetune(string dataset="QS");
+    virtual void train_separate(string dataset="LS", bool reset=true);
     
     // 成员变量
     // 可以通过读配置文件Configuration.h得到

@@ -126,11 +126,16 @@ int main(int argc, char** argv) {
 		int layer_num = sizeof(layer_sizes) / sizeof(layer_sizes[0]);
 
 		DBNCF* dbncf = new DBNCF();
+		//DBNCF dbncf;
 
 		dbncf->addSet("LS", &LS);
 		dbncf->addSet("VS", &VS);
 		dbncf->addSet("TS", &TS);
 		dbncf->addSet("QS", &QS);
+	//	dbncf.addSet("LS", &LS);
+	//	dbncf.addSet("VS", &VS);
+	//	dbncf.addSet("TS", &TS);
+	//	dbncf.addSet("QS", &QS);
 
 		// RBM* r = dbncf->rbm_layer;
 
@@ -168,32 +173,21 @@ int main(int argc, char** argv) {
 		  r->setParameter("annealing", &vm["annealing"].as<bool>(), sizeof(bool));
 		  r->setParameter("annealing_rate", &vm["annealing-rate"].as<double>(), sizeof(double));
 		  r->setParameter("verbose", &vm["verbose"].as<bool>(), sizeof(bool));
+		  */    
 
 		  if (vm.count("log")) {
 		  ostream* log = new ofstream(vm["log"].as<string>().c_str(), ios::out);
-		  r->setParameter("log", &log, sizeof(ostream*));
+		  dbncf->setParameter("log", &log, sizeof(ostream*));
 		  } else {
 		  ostream* log = &cout;
-		  r->setParameter("log", &log, sizeof(ostream*));
+		  dbncf->setParameter("log", &log, sizeof(ostream*));
 		  }
-		  */    
 		printf("training...\n");
 		// Train!
-		dbncf->train();
-
-        printf("####after training, use full network to predict...\n");
-		printf("generalization RMSE: %lf\n", dbncf->test("TS"));
-		printf("training RMSE: %lf\n\n", dbncf->test("LS"));
-	
-	    dbncf->finetune();
-		printf("####after finetune, use full network to predict...\n");
-		printf("generalization RMSE: %lf\n", dbncf->test());
-		printf("training RMSE: %lf\n\n", dbncf->test("LS"));
-
-    	//printf("####after finetune, only use output layer to predict..\n");
-		//printf("generalization RMSE: %lf\n", dbncf->output_layer->test());
-		//printf("training RMSE: %lf\n\n", dbncf->output_layer->test("LS"));
-		// dbncf->finetune("LS");
+		//dbncf->train();
+		dbncf->pretrain();
+		 
+		//dbncf.train();
 
 		// double RMSE= dbncf->test("TS");
 		// printf("RMSE: %lf\n", RMSE);

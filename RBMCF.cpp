@@ -509,7 +509,7 @@ void RBMCF::train(string dataset, bool reset) {
     gettimeofday(&end, NULL);
     usec = 1000000 * (end.tv_sec-start.tv_sec) + end.tv_usec - start.tv_usec;
     printf( "File: %s, Function: %s, Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
-    printf("Time of train(): %ld usec[ %lf sec].", usec, usec / 1000000.);
+    printf("Time of train(): %ld usec[ %lf sec].\n", usec, usec / 1000000.);
 }
 
 double RBMCF::test(string dataset) {
@@ -1199,6 +1199,7 @@ void RBMCF::train_batch(string dataset, bool reset, int batch) {
             }
 
             // Loop through users of current batch
+			//#pragma omp for schedule(guided)
             for (int n = batch; n < min(batch + batch_size, LS->nb_rows); n++) {
                 // Set user n data on the visible units
                 for (int m = LS->index[n]; m < LS->index[n] + LS->count[n]; m++) {
@@ -1371,6 +1372,6 @@ void RBMCF::train_batch(string dataset, bool reset, int batch) {
     gettimeofday(&end, NULL);
     usec = 1000000 * (end.tv_sec-start.tv_sec) + end.tv_usec - start.tv_usec;
     printf( "File: %s, Function: %s, Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
-    printf("Time of train(): %ld usec[ %lf sec].", usec, usec / 1000000.);
+    printf("Time of train_batch(): %ld usec[ %lf sec].\n", usec, usec / 1000000.);
 }
 
