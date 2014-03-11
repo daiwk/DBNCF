@@ -14,7 +14,7 @@ RunRBMCF: RunRBMCF.o $(OBJECTS)
 RunDBNCF: RunDBNCF.o $(OBJECTS)
 	$(MPICC) -o $@ $^ $(LDFLAGS)
 
-RunDBNCF: RunDAECF.o $(OBJECTS)
+RunDAECF: RunDAECF.o $(OBJECTS)
 	$(MPICC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.cpp

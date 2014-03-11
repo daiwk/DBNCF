@@ -171,6 +171,16 @@ namespace Config {
         static const bool VERBOSE = true;
     }
 
+    namespace DAECF {
+        static const int TRAIN_EPOCHS = 2; // DBN的训练轮数
+        static const int BATCH_SIZE = 1000;  // 默认100;
+	// HL是HiddenLayer的缩写
+        static const int HL_SIZE = 2;  // 默认20;
+        static const int HL_NUM = 3;  // 默认2;
+        // Misc
+        static const bool VERBOSE = true;
+    }
+
 }
 
 #endif

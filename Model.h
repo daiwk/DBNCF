@@ -29,6 +29,7 @@ const int CLASS_DUMB3 = 3;
 const int CLASS_RBM = 4;
 const int CLASS_RBMCF = 5;
 const int CLASS_DBNCF = 6;
+const int CLASS_DAECF = 7;
 
 
 /* ========================================================================= *

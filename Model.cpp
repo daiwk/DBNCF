@@ -21,6 +21,7 @@
 #include "RBM.h"
 #include "RBMCF.h"
 #include "DBNCF.h"
+#include "DAECF.h"
 
 using namespace std;
 
@@ -82,6 +83,9 @@ Model* Model::load(string filename) {
 
         case CLASS_DBNCF:
             return new DBNCF(filename);
+
+        case CLASS_DAECF:
+            return new DAECF(filename);
 
         default:
             throw runtime_error("Unknown model type");

@@ -1,8 +1,8 @@
-// class: DBNCF
+// class: DAECF
 // Author: daiwenkai
 // Date: Feb 24, 2014
 
-#include "DBNCF.h"
+#include "DAECF.h"
 #include "RBMBASIC.h"
 #include "Configuration.h"
 
@@ -26,24 +26,24 @@ using namespace std;
 #define _ij(i, j) ((i) * F + (j))
 
 // 默认构造函数
-DBNCF::DBNCF() : Model(CLASS_DBNCF)
+DAECF::DAECF() : Model(CLASS_DAECF)
 {
 
-	train_epochs = Config::DBNCF::TRAIN_EPOCHS;
+	train_epochs = Config::DAECF::TRAIN_EPOCHS;
 	setParameter("train_epochs", &train_epochs, sizeof(int));
-	batch_size = Config::DBNCF::BATCH_SIZE;
+	batch_size = Config::DAECF::BATCH_SIZE;
 	setParameter("batch_size", &batch_size, sizeof(int));
 
 
 	// 初始化hidden_layers
 	// K=1, N=1, M=前一层的节点数
-	hidden_layer_num = Config::DBNCF::HL_NUM;
+	hidden_layer_num = Config::DAECF::HL_NUM;
 	setParameter("hidden_layer_num", &hidden_layer_num, sizeof(int));
 
 	// 有hidden_layer_num个隐层，就有hidden_layer_num - 1个RBMBASIC
 	hidden_layers = new RBMBASIC*[hidden_layer_num - 1]; 
 
-	int sizes = Config::DBNCF::HL_SIZE;
+	int sizes = Config::DAECF::HL_SIZE;
 	setParameter("hidden_layer_size", &sizes, sizeof(int));
 
 	hidden_layer_sizes = new int[hidden_layer_num];
@@ -85,15 +85,15 @@ DBNCF::DBNCF() : Model(CLASS_DBNCF)
 	output_layer = new RBMCF(output_layer_name);
 
 	// Default verbose and output
-	setParameter("verbose", &Config::DBNCF::VERBOSE, sizeof(bool));
+	setParameter("verbose", &Config::DAECF::VERBOSE, sizeof(bool));
 
 	ostream* log = &cout;
 	setParameter("log", &log, sizeof(ostream*));
 
 }
 
-// 读取模型文件生成DBNCF的构造函数
-DBNCF::DBNCF(string filename) : Model(CLASS_DBNCF)
+// 读取模型文件生成DAECF的构造函数
+DAECF::DAECF(string filename) : Model(CLASS_DAECF)
 {
 	// 打开文件
 	ifstream in(filename.c_str(), ios::in | ios::binary);
@@ -164,7 +164,7 @@ DBNCF::DBNCF(string filename) : Model(CLASS_DBNCF)
 	output_layer = new RBMCF(output_layer_name);
 
 	// 默认的verbose及输出重定向
-	setParameter("verbose", &Config::DBNCF::VERBOSE, sizeof(bool));
+	setParameter("verbose", &Config::DAECF::VERBOSE, sizeof(bool));
 
 	ostream* log = &cout;
 	setParameter("log", &log, sizeof(ostream*));
@@ -175,7 +175,7 @@ DBNCF::DBNCF(string filename) : Model(CLASS_DBNCF)
 
 
 // 析构函数
-DBNCF::~DBNCF()
+DAECF::~DAECF()
 {
 	delete input_layer;
 	delete output_layer;
@@ -186,7 +186,7 @@ DBNCF::~DBNCF()
 }
 
 // Model的函数
-void DBNCF::train(string dataset, bool reset) 
+void DAECF::train(string dataset, bool reset) 
 {
 	pretrain(dataset, reset);
     printf("####after training, use full network to predict...\n");
@@ -208,7 +208,7 @@ void DBNCF::train(string dataset, bool reset)
 
 
 
-void DBNCF::pretrain(string dataset, bool reset) 
+void DAECF::pretrain(string dataset, bool reset) 
 {
 
 	// Pop parameters
@@ -396,7 +396,7 @@ void DBNCF::pretrain(string dataset, bool reset)
 
 }
 
-void DBNCF::finetune(string dataset)
+void DAECF::finetune(string dataset)
 {
 
 	Dataset* LS = sets[dataset];
@@ -640,7 +640,7 @@ void DBNCF::finetune(string dataset)
 }
 
 
-double DBNCF::test(string dataset)
+double DAECF::test(string dataset)
 {
 
 	Dataset* LS = sets[dataset];
@@ -993,7 +993,7 @@ double DBNCF::test(string dataset)
 ////	return 1;
 ////}
 
-double DBNCF::predict(int user, int movie)
+double DAECF::predict(int user, int movie)
 {
 	//    // Pop LS
 	//    Dataset* LS = sets["LS"];
@@ -1077,7 +1077,7 @@ double DBNCF::predict(int user, int movie)
 
 }
 
-void DBNCF::save(string filename)
+void DAECF::save(string filename)
 {
 	// Open file
 	ofstream out(filename.c_str(), ios::out | ios::binary);
@@ -1106,7 +1106,7 @@ void DBNCF::save(string filename)
 
 }
 
-string DBNCF::toString()
+string DAECF::toString()
 {
 	stringstream s;
 
@@ -1123,11 +1123,11 @@ string DBNCF::toString()
 
 }
 
-// DBNCF的函数
-void DBNCF::train_separate(string dataset, bool reset)
+// DAECF的函数
+void DAECF::train_separate(string dataset, bool reset)
 {
 
-	printf("DBNCF epochs: %d\n", train_epochs);
+	printf("DAECF epochs: %d\n", train_epochs);
 	input_layer->train();
 	printf("before iterations...\n");
 	printf("RMSE: %lf\n", input_layer->test());

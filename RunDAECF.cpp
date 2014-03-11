@@ -20,7 +20,7 @@
 #include "RBMCF.h"
 #include "RBMCF_OPENMP.h"
 
-#include "DBNCF.h"
+#include "DAECF.h"
 // #include <mpi.h>
 
 using namespace std;
@@ -125,19 +125,19 @@ int main(int argc, char** argv) {
 		int layer_sizes[] = {20, 30, 30, 30};
 		int layer_num = sizeof(layer_sizes) / sizeof(layer_sizes[0]);
 
-		DBNCF* dbncf = new DBNCF();
-		//DBNCF dbncf;
+		DAECF* daecf = new DAECF();
+		//DAECF daecf;
 
-		dbncf->addSet("LS", &LS);
-		dbncf->addSet("VS", &VS);
-		dbncf->addSet("TS", &TS);
-		dbncf->addSet("QS", &QS);
-	//	dbncf.addSet("LS", &LS);
-	//	dbncf.addSet("VS", &VS);
-	//	dbncf.addSet("TS", &TS);
-	//	dbncf.addSet("QS", &QS);
+		daecf->addSet("LS", &LS);
+		daecf->addSet("VS", &VS);
+		daecf->addSet("TS", &TS);
+		daecf->addSet("QS", &QS);
+	//	daecf.addSet("LS", &LS);
+	//	daecf.addSet("VS", &VS);
+	//	daecf.addSet("TS", &TS);
+	//	daecf.addSet("QS", &QS);
 
-		// RBM* r = dbncf->rbm_layer;
+		// RBM* r = daecf->rbm_layer;
 
 
 		/*    if (!vm["openmp"].as<bool>()) {
@@ -177,19 +177,19 @@ int main(int argc, char** argv) {
 
 		  if (vm.count("log")) {
 		  ostream* log = new ofstream(vm["log"].as<string>().c_str(), ios::out);
-		  dbncf->setParameter("log", &log, sizeof(ostream*));
+		  daecf->setParameter("log", &log, sizeof(ostream*));
 		  } else {
 		  ostream* log = &cout;
-		  dbncf->setParameter("log", &log, sizeof(ostream*));
+		  daecf->setParameter("log", &log, sizeof(ostream*));
 		  }
 		printf("training...\n");
 		// Train!
-		//dbncf->train();
-		dbncf->pretrain();
+		//daecf->train();
+		daecf->pretrain();
 		 
-		//dbncf.train();
+		//daecf.train();
 
-		// double RMSE= dbncf->test("TS");
+		// double RMSE= daecf->test("TS");
 		// printf("RMSE: %lf\n", RMSE);
 		/*    cout << "finished training..." << endl;
 		  if (!vm["openmp"].as<bool>()) {
@@ -207,7 +207,7 @@ int main(int argc, char** argv) {
   // delete r;
 
 
-		delete dbncf;
+		delete daecf;
 
 		//    MPI_Finalize ();
 
