@@ -30,6 +30,7 @@ const int CLASS_RBM = 4;
 const int CLASS_RBMCF = 5;
 const int CLASS_DBNCF = 6;
 const int CLASS_DAECF = 7;
+const int CLASS_AHRBMCF = 8;
 
 
 /* ========================================================================= *

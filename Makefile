@@ -3,12 +3,15 @@ CC = g++
 MPICC = g++
 CFLAGS = -Wall -ansi -pedantic -fopenmp -O0 -funroll-all-loops -g 
 LDFLAGS = -lboost_program_options-mt -fopenmp -g
-OBJECTS = Dataset.o Dumb.o Ensemble.o Model.o RBM.o Misc.o RBMCF.o RBMBASIC.o RBMCF_OPENMP.o DBNCF.o DAECF.o 
-EXEC = RunDBNCF RunRBMCF RunDAECF #RunDBN RunRBM
+OBJECTS = Dataset.o Dumb.o Ensemble.o Model.o RBM.o Misc.o RBMCF.o RBMBASIC.o RBMCF_OPENMP.o DBNCF.o DAECF.o AHRBMCF.o
+EXEC = RunDBNCF RunRBMCF RunDAECF RunAHRBMCF #RunDBN RunRBM
 
 all: $(EXEC)
 
 RunRBMCF: RunRBMCF.o $(OBJECTS)
+	$(MPICC) -o $@ $^ $(LDFLAGS)
+
+RunAHRBMCF: RunAHRBMCF.o $(OBJECTS)
 	$(MPICC) -o $@ $^ $(LDFLAGS)
 
 RunDBNCF: RunDBNCF.o $(OBJECTS)
