@@ -188,7 +188,8 @@ AHRBMCF::~AHRBMCF()
 // Model的函数
 void AHRBMCF::train(string dataset, bool reset) 
 {
-	pretrain(dataset, reset);
+	// pretrain(dataset, reset);
+	pretrain_old_version(dataset, reset);
     printf("####after training, use full network to predict...\n");
 	printf("generalization RMSE: %lf\n", test("TS"));
 	printf("training RMSE: %lf\n\n", test("LS"));
@@ -1397,6 +1398,41 @@ string AHRBMCF::toString()
 // AHRBMCF的函数
 void AHRBMCF::train_separate(string dataset, bool reset)
 {
+	// Pop parameters
+	int batch_size = *(int*) getParameter("batch_size");
+	printf("batch_size: %d\n", batch_size);
+	printf("train_epochs: %d\n", train_epochs);
+	bool verbose = *(bool*) getParameter("verbose");
+	ostream* out = *(ostream**) getParameter("log");
+
+	Dataset* LS = sets[dataset];
+
+	cout<<"LS->nb_rows:"<<LS->nb_rows<<endl;
+	Dataset* QS = sets["QS"];
+	Dataset* TS = sets["TS"];
+	Dataset* VS = sets["VS"];
+	assert(LS != NULL);
+
+	//    if (conditional) {
+	//        assert(QS != NULL);
+	//        assert(LS->nb_rows == QS->nb_rows);
+	//    }
+
+	input_layer->addSet(dataset, LS);
+	input_layer->addSet("QS", QS);
+	input_layer->addSet("VS", VS);
+	input_layer->addSet("TS", TS);
+
+	// just test...
+	//    input_layer->train();
+
+	output_layer->addSet(dataset, LS);
+	output_layer->addSet("QS", QS);
+	output_layer->addSet("VS", VS);
+	output_layer->addSet("TS", TS);
+
+	*out <<"EPOch\tgen-RMSE\ttrain-RMSE\tinput\\full\\out\n";
+	out->flush();
 
 	printf("AHRBMCF epochs: %d\n", train_epochs);
 	input_layer->train();
@@ -1430,10 +1466,17 @@ void AHRBMCF::train_separate(string dataset, bool reset)
 					printf("rbm: %lf\n ", hidden_layers[i - 1]->hb[m]);
 				}
 			}
+			cout << "calc input rmse...\n";
+			char rmse_input[1000];
+			sprintf(rmse_input, "%d\t%lf\t%lf\tinput\n", epoch, input_layer->test("TS"), input_layer->test("LS"));
+			*out << rmse_input;
+	
+			out->flush();
 
 
 		}
 	}
+
 
 	printf("after iterations...\n");
 	printf("generalization RMSE: %lf\n", input_layer->test());

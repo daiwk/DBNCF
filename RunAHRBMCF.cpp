@@ -184,8 +184,8 @@ int main(int argc, char** argv) {
 		  }
 		printf("training...\n");
 		// Train!
-		//ahrbmcf->train();
-		ahrbmcf->pretrain();
+		ahrbmcf->train(); 
+		// ahrbmcf->pretrain();
 		 
 		//ahrbmcf.train();
 

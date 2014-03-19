@@ -184,8 +184,8 @@ int main(int argc, char** argv) {
 		  }
 		printf("training...\n");
 		// Train!
-		//dbncf->train();
-		dbncf->pretrain();
+		dbncf->train(); // pretrain,then finetune
+		// dbncf->pretrain();
 		 
 		//dbncf.train();
 

@@ -35,6 +35,7 @@ public:
     virtual string toString();
    
     // DAECF的函数
+    virtual void pretrain_old_version(string dataset="LS", bool reset=true);
     virtual void pretrain(string dataset="LS", bool reset=true);
     virtual void finetune(string dataset="QS");
     virtual void train_separate(string dataset="LS", bool reset=true);

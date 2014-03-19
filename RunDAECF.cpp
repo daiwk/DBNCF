@@ -184,7 +184,7 @@ int main(int argc, char** argv) {
 		  }
 		printf("training...\n");
 		// Train!
-		//daecf->train();
+		daecf->train(); // pretrain,then finetune
 		daecf->pretrain();
 		 
 		//daecf.train();

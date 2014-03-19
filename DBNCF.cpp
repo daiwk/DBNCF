@@ -188,7 +188,8 @@ DBNCF::~DBNCF()
 // Model的函数
 void DBNCF::train(string dataset, bool reset) 
 {
-	pretrain(dataset, reset);
+	// pretrain(dataset, reset);
+	pretrain_old_version(dataset, reset);
     printf("####after training, use full network to predict...\n");
 	printf("generalization RMSE: %lf\n", test("TS"));
 	printf("training RMSE: %lf\n\n", test("LS"));
