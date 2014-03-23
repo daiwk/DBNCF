@@ -23,13 +23,13 @@
 
 
 // RBMBASIC::RBMBASIC() : RBM() 
-RBMBASIC::RBMBASIC() : RBMCF_OPENMP() 
+RBMBASIC::RBMBASIC() : RBMCF()//_OPENMP() 
 {
 
 }
 
 // RBMBASIC::RBMBASIC(string filename) : RBM(filename) 
-RBMBASIC::RBMBASIC(string filename) : RBMCF_OPENMP(filename) 
+RBMBASIC::RBMBASIC(string filename) : RBMCF()//_OPENMP(filename) 
 {
 
 }
@@ -378,7 +378,20 @@ void RBMBASIC::train_full(bool reset = true, int rbmlayers_id = 0)
     
     out_hs.write((char*) hs, F * sizeof (double));
     out_hs.close();
- 
+
+    // 把hs的状态输出到文件，供下一层当做vs的输入
+
+    sprintf(ss, "rbm-hp-%d", rbmlayers_id + 1);
+    string hp_filename_out = ss; 
+    ofstream out_hp(hp_filename_out.c_str(), ios::out | ios::binary);
+
+    if (out_hp.fail()) {
+        throw runtime_error("I/O exception! In openning rbm-hp-%d");
+    }
+    
+    out_hp.write((char*) hp, F * sizeof (double));
+    out_hp.close();
+
     // 把hb的状态输出到文件，供下一层当做vb的输入
 
     sprintf(ss, "rbm-hb-%d", rbmlayers_id + 1);
@@ -386,7 +399,7 @@ void RBMBASIC::train_full(bool reset = true, int rbmlayers_id = 0)
     ofstream out_hb(hb_filename_out.c_str(), ios::out | ios::binary);
 
     if (out_hb.fail()) {
-        throw runtime_error("I/O exception! In openning rbm-hs-%d");
+        throw runtime_error("I/O exception! In openning rbm-hb-%d");
     }
     
     out_hb.write((char*) hb, F * sizeof (double));

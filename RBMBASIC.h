@@ -10,7 +10,7 @@
 #include "RBMCF_OPENMP.h"
 
 // class RBMBASIC : public RBM 
-class RBMBASIC : public RBMCF_OPENMP {
+class RBMBASIC : public RBMCF {//_OPENMP {
 // Constructors
 public:
     RBMBASIC();

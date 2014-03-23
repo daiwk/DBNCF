@@ -397,7 +397,7 @@ void RBMCF::train(string dataset, bool reset) {
                     // Compute p(V | h) into vp
                     update_visible(hs, vp, &LS->ids[LS->index[n]], LS->count[n]);
 
-                    // Sample from p(V | h) into hs
+                    // Sample from p(V | h) into vs
                     sample_visible(vp, vs, &LS->ids[LS->index[n]], LS->count[n]);
 
                     // Compute p(h | V, d) into hp
@@ -1256,7 +1256,7 @@ void RBMCF::train_batch(string dataset, bool reset, int batch) {
                     // Compute p(V | h) into vp
                     update_visible(hs, vp, &LS->ids[LS->index[n]], LS->count[n]);
 
-                    // Sample from p(V | h) into hs
+                    // Sample from p(V | h) into vs
                     sample_visible(vp, vs, &LS->ids[LS->index[n]], LS->count[n]);
 
                     // Compute p(h | V, d) into hp
