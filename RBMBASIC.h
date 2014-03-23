@@ -31,7 +31,8 @@ public:
     void update_hb_p(double* hb_acc, int nth); 
 
     void sample_visible_p(double* vp, double* vs, int* mask, int mask_size);
-
+    
+    void reset(void);
 // Attributes
 
 

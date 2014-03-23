@@ -250,7 +250,7 @@ void AHRBMCF::pretrain_old_version(string dataset, bool reset)
 
 	int train_critia = 1;
 
-//    #pragma omp parallel
+    #pragma omp parallel
 	{
 	
 
@@ -260,7 +260,7 @@ void AHRBMCF::pretrain_old_version(string dataset, bool reset)
 	
 			for(int epoch_in = 0; epoch_in < train_critia; epoch_in++) { //paper里面是critia...一般就是epochs吧，这里改个名字
 	
-	//			#pragma omp for schedule(guided)
+				#pragma omp for schedule(guided)
 				for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
 	
 					printf("\nbatch: %d,\n", batch);
@@ -300,13 +300,13 @@ void AHRBMCF::pretrain_old_version(string dataset, bool reset)
 								if( l == 1) {
 	
 	//								printf("pre_hb: %lf ", input_layer->hb[m]);
-	//#pragma omp critical
+	#pragma omp critical
 									input_layer->hb[m] = now_vb;
 	//								printf("now_hb: %lf\n ", input_layer->hb[m]);
 								}
 								else {
 	
-	//#pragma omp critical
+	#pragma omp critical
 									hidden_layers[l - 2]->hb[m] = now_vb;
 	//								printf("now_hb: %lf\n ", hidden_layers[l - 2]->hb[m]);
 								}
@@ -331,7 +331,7 @@ void AHRBMCF::pretrain_old_version(string dataset, bool reset)
 			}  // End of for(int epoch_in = 0; epoch_in < train_critia; epoch_in++) 
 		}  // End of for (int l = 0; l < hidden_layer_num - 1; l++)
 
-//		#pragma omp single
+		#pragma omp single
 		{
 		cout << "calc input rmse...\n";
 		char rmse_input[1000];

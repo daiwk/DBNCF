@@ -613,4 +613,60 @@ void RBMBASIC::sample_visible_p(double* vp, double* vs, int* mask, int mask_size
         vs[j] = (uniform() < vp[j]) ? 1. : 0.;
     }
 }
+void RBMBASIC::reset(void) {
+    // Pop parameters
+//    N = *(int*) getParameter("N");
+//    M = *(int*) getParameter("M");
+//    K = *(int*) getParameter("K");
+//    F = *(int*) getParameter("F");
+//    conditional = *(bool*) getParameter("conditional");
 
+    // Deallocate old data structures
+    if (w != NULL) delete[] w;
+    if (w_inc != NULL) delete[] w_inc;
+    if (vb != NULL) delete[] vb;
+    if (vb_inc != NULL) delete [] vb_inc;
+    if (hb != NULL) delete[] hb;
+    if (hb_inc != NULL) delete[] hb_inc;
+    if (d != NULL) delete[] d;
+    if (d_inc != NULL) delete[] d_inc;
+
+    // Allocate data structures
+    w = new double[M * K * F];
+    w_inc = new double[M * K * F];
+    vb = new double[M * K];
+    vb_inc = new double[M * K];
+    hb = new double[F];
+    hb_inc = new double[F];
+
+    if (conditional) {
+        d = new double[M * F];
+        d_inc = new double[M * F];
+    }
+
+    // Initialize weights and biases
+    for (int i = 0; i < M; i++) {
+        for (int k = 0; k < K; k++) {
+            for (int j = 0; j < F; j++) {
+                w[_ikj(i, k, j)] = gaussian(0., 0.01);
+            }
+        }
+
+        if (conditional) {
+            for (int j = 0; j < F; j++){
+                d[_ij(i, j)] = gaussian(0., 0.001);
+            }
+        }
+    }
+
+    // Zero out everything else
+    zero(vb, M * K);
+    zero(hb, F);
+    zero(w_inc, M * K * F);
+    zero(vb_inc, M * K);
+    zero(hb_inc, F);
+
+    if (conditional) {
+        zero(d_inc, M * F);
+    }
+}
