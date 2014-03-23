@@ -278,6 +278,8 @@ void AHRBMCF::pretrain_old_version(string dataset, bool reset)
 						else {
 							// sample hl from hl-1
 							bool reset = false;
+							if(epoch == 1)
+								reset = true;
 	
 							// 注意下标：此函数读rbm-h*-l，输出rbm-h*-l+1
 							hidden_layers[l - 1]->train_full(reset, l - 1); 
