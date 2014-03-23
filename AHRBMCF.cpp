@@ -278,7 +278,7 @@ void AHRBMCF::pretrain_old_version(string dataset, bool reset)
 						else {
 							// sample hl from hl-1
 							bool reset = false;
-							if(epoch == 1)
+							if(epoch == 0)
 								reset = true;
 	
 							// 注意下标：此函数读rbm-h*-l，输出rbm-h*-l+1
