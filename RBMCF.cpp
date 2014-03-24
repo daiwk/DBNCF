@@ -1368,6 +1368,8 @@ void RBMCF::train_batch(string dataset, bool reset, int batch) {
     
  
     // Deallocate data structures
+//    #pragma omp critical
+{
     if (vs != NULL) delete[] vs;
     if (vp != NULL) delete[] vp;
     if (hs != NULL) delete[] hs;
@@ -1379,7 +1381,7 @@ void RBMCF::train_batch(string dataset, bool reset, int batch) {
     if (vb_count != NULL) delete[] vb_count;
     if (hb_acc != NULL) delete[] hb_acc;
     if (watched != NULL) delete[] watched;
-    
+}    
     // print running time
     gettimeofday(&end, NULL);
     usec = 1000000 * (end.tv_sec-start.tv_sec) + end.tv_usec - start.tv_usec;
