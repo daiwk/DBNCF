@@ -190,14 +190,14 @@ void AHRBMCF::train(string dataset, bool reset)
 {
 	// pretrain(dataset, reset);
 	pretrain_old_version(dataset, reset);
-    printf("####after training, use full network to predict...\n");
-	printf("generalization RMSE: %lf\n", test("TS"));
-	printf("training RMSE: %lf\n\n", test("LS"));
+//    printf("####after training, use full network to predict...\n");
+//	printf("generalization RMSE: %lf\n", test("TS"));
+//	printf("training RMSE: %lf\n\n", test("LS"));
 
-    finetune();
-	printf("####after finetune, use full network to predict...\n");
-	printf("generalization RMSE: %lf\n", test());
-	printf("training RMSE: %lf\n\n", test("LS"));
+//    finetune();
+//	printf("####after finetune, use full network to predict...\n");
+//	printf("generalization RMSE: %lf\n", test());
+//	printf("training RMSE: %lf\n\n", test("LS"));
 
 	//printf("####after finetune, only use output layer to predict..\n");
 	//printf("generalization RMSE: %lf\n", dbncf->output_layer->test());
@@ -338,15 +338,15 @@ void AHRBMCF::pretrain_old_version(string dataset, bool reset)
 		sprintf(rmse_input, "%d\t%lf\t%lf\tinput\n", epoch, input_layer->test("TS"), input_layer->test("LS"));
 		*out << rmse_input;
 
-		cout << "calc full rmse...\n";
-	    char rmse_full[1000];
-		sprintf(rmse_full, "%d\t%lf\t%lf\tfull\n", epoch, test("TS"), test("LS"));
-		*out << rmse_full;
-	    
-		cout << "calc output rmse...\n";
-		char rmse_output[1000];
-		sprintf(rmse_output, "%d\t%lf\t%lf\toutput\n", epoch, output_layer->test("TS"), output_layer->test("LS"));
-		*out << rmse_output;
+//		cout << "calc full rmse...\n";
+//	    char rmse_full[1000];
+//		sprintf(rmse_full, "%d\t%lf\t%lf\tfull\n", epoch, test("TS"), test("LS"));
+//		*out << rmse_full;
+//	    
+//		cout << "calc output rmse...\n";
+//		char rmse_output[1000];
+//		sprintf(rmse_output, "%d\t%lf\t%lf\toutput\n", epoch, output_layer->test("TS"), output_layer->test("LS"));
+//		*out << rmse_output;
 		
 		out->flush();
 		}
