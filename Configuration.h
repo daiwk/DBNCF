@@ -185,7 +185,7 @@ namespace Config {
         static const int TRAIN_EPOCHS = 2; // AHRBMCF的训练轮数
         static const int BATCH_SIZE = 10000;  // 默认100;
 	// HL是HiddenLayer的缩写
-        static const int HL_SIZE = 20;  // 默认20;
+        static const int HL_SIZE = 2;  // 默认20;
         static const int HL_NUM = 3;  // 默认2;
         // Misc
         static const bool VERBOSE = true;

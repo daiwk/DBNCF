@@ -74,6 +74,11 @@ AHRBMCF::AHRBMCF() : Model(CLASS_AHRBMCF)
 		r.reset();
 		r.save(rbm_name);
 		hidden_layers[i] = new RBMBASIC(rbm_name);
+		hidden_layers[i]->setParameter("M", &hidden_layer_sizes[i], sizeof(int));
+		hidden_layers[i]->setParameter("F", &hidden_layer_sizes[i + 1], sizeof(int));
+		hidden_layers[i]->setParameter("N", &Config::RBMBASIC::N, sizeof(int));
+		hidden_layers[i]->setParameter("K", &Config::RBMBASIC::K, sizeof(int));
+
 	}
 
 	// 初始化output_layer

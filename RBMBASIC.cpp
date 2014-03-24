@@ -615,11 +615,11 @@ void RBMBASIC::sample_visible_p(double* vp, double* vs, int* mask, int mask_size
 }
 void RBMBASIC::reset(void) {
     // Pop parameters
-//    N = *(int*) getParameter("N");
-//    M = *(int*) getParameter("M");
-//    K = *(int*) getParameter("K");
-//    F = *(int*) getParameter("F");
-//    conditional = *(bool*) getParameter("conditional");
+    N = *(int*) getParameter("N");
+    M = *(int*) getParameter("M");
+    K = *(int*) getParameter("K");
+    F = *(int*) getParameter("F");
+    conditional = *(bool*) getParameter("conditional");
 
     // Deallocate old data structures
     if (w != NULL) delete[] w;
