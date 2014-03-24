@@ -287,6 +287,7 @@ void AHRBMCF::pretrain_old_version(string dataset, bool reset)
 								reset = true;
 	
 							// 注意下标：此函数读rbm-h*-l，输出rbm-h*-l+1
+							#pragma omp critical
 							hidden_layers[l - 1]->train_full(reset, l - 1); 
 							printf("layer %d trained\n", l - 1); 
 	
