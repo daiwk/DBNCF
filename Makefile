@@ -1,10 +1,10 @@
 CC = g++
 #MPICC = mpic++
 MPICC = g++
-CFLAGS = -Wall -ansi -pedantic -fopenmp -O0 -funroll-all-loops -g 
-LDFLAGS = -lboost_program_options-mt -fopenmp -g
+CFLAGS = -Wall -ansi -pedantic -fopenmp -O0 -funroll-all-loops -g -fPIC 
+LDFLAGS = -lboost_program_options-mt -fopenmp -g -fPIC
 OBJECTS = Dataset.o Dumb.o Ensemble.o Model.o RBM.o Misc.o RBMCF.o RBMBASIC.o RBMCF_OPENMP.o DBNCF.o DAECF.o AHRBMCF.o
-EXEC = RunDBNCF RunRBMCF RunDAECF RunAHRBMCF #RunDBN RunRBM
+EXEC = RunDBNCF RunRBMCF RunDAECF RunAHRBMCF RunDBNCF.so RunRBMCF.so RunDAECF.so RunAHRBMCF.so #RunDBN RunRBM
 
 all: $(EXEC)
 
@@ -19,6 +19,19 @@ RunDBNCF: RunDBNCF.o $(OBJECTS)
 
 RunDAECF: RunDAECF.o $(OBJECTS)
 	$(MPICC) -o $@ $^ $(LDFLAGS)
+
+RunRBMCF.so: RunRBMCF.o $(OBJECTS)
+	$(MPICC) -o $@ $^ $(LDFLAGS) -shared
+
+RunAHRBMCF.so: RunAHRBMCF.o $(OBJECTS)
+	$(MPICC) -o $@ $^ $(LDFLAGS) -shared
+
+RunDBNCF.so: RunDBNCF.o $(OBJECTS)
+	$(MPICC) -o $@ $^ $(LDFLAGS) -shared
+
+RunDAECF.so: RunDAECF.o $(OBJECTS)
+	$(MPICC) -o $@ $^ $(LDFLAGS) -shared
+
 
 %.o: %.cpp
 	$(MPICC) $(CFLAGS) -o $@ -c $<

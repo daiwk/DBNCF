@@ -1286,6 +1286,7 @@ double AHRBMCF::test(string dataset)
 
 double AHRBMCF::predict(int user, int movie)
 {
+	return input_layer->predict(user, movie);
 	//    // Pop LS
 	//    Dataset* LS = sets["LS"];
 	//    Dataset* QS = sets["QS"];
@@ -1364,7 +1365,6 @@ double AHRBMCF::predict(int user, int movie)
 	//    delete[] hp;
 	//
 	//    return prediction;
-	return 1;
 
 }
 

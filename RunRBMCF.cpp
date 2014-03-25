@@ -23,6 +23,29 @@
 using namespace std;
 using namespace boost::program_options;
 
+extern "C" 
+{
+double predict_ratings(int userid, int movieid)
+{
+    RBMCF* r = new RBMCF("model_rbmcf");
+    Dataset LS("svn_dir/data/bin/LS.bin.small-changeUserNum-1");
+    Dataset TS("svn_dir/data/bin/TS.bin.small-changeUserNum-1");
+    Dataset QS("svn_dir/data/bin/TS.bin.small-changeUserNum-1");
+    Dataset VS("svn_dir/data/bin/TS.bin.small-changeUserNum-1");
+//  Dataset LS("/home/daiwk/media-dir/DATA/daiwk/mpi/data/bin/LS.bin.small-changeUserNum-1");
+//  Dataset TS("/home/daiwk/media-dir/DATA/daiwk/mpi/data/bin/TS.bin.small-changeUserNum-1");
+//  Dataset QS("/home/daiwk/media-dir/DATA/daiwk/mpi/data/bin/TS.bin.small-changeUserNum-1");
+//  Dataset VS("/home/daiwk/media-dir/DATA/daiwk/mpi/data/bin/TS.bin.small-changeUserNum-1");
+    
+    r->addSet("LS", &LS);
+    r->addSet("VS", &VS);
+    r->addSet("TS", &TS);
+    r->addSet("QS", &QS);
+    double pred = r->predict(userid,movieid);
+    printf("pred: %lf\n", pred);
+    return pred;
+}
+}
 
 /* ========================================================================= *
  * main
@@ -157,6 +180,8 @@ int main(int argc, char** argv) {
     cout << "training..." << endl;
     // Train!
     r->train();
+	string model_name="model_rbmcf";
+	r->save(model_name);
 /*    cout << "finished training..." << endl;
     if (!vm["openmp"].as<bool>()) {
 	cout << "saving rbm..." << endl;

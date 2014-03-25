@@ -26,6 +26,30 @@
 using namespace std;
 using namespace boost::program_options;
 
+extern "C" 
+{
+double predict_ratings(int userid, int movieid)
+{
+    AHRBMCF* r = new AHRBMCF("model_ahrbmcf");
+    Dataset LS("svn_dir/data/bin/LS.bin.small-changeUserNum-1");
+    Dataset TS("svn_dir/data/bin/TS.bin.small-changeUserNum-1");
+    Dataset QS("svn_dir/data/bin/TS.bin.small-changeUserNum-1");
+    Dataset VS("svn_dir/data/bin/TS.bin.small-changeUserNum-1");
+//  Dataset LS("/home/daiwk/media-dir/DATA/daiwk/mpi/data/bin/LS.bin.small-changeUserNum-1");
+//  Dataset TS("/home/daiwk/media-dir/DATA/daiwk/mpi/data/bin/TS.bin.small-changeUserNum-1");
+//  Dataset QS("/home/daiwk/media-dir/DATA/daiwk/mpi/data/bin/TS.bin.small-changeUserNum-1");
+//  Dataset VS("/home/daiwk/media-dir/DATA/daiwk/mpi/data/bin/TS.bin.small-changeUserNum-1");
+    
+    r->addSet("LS", &LS);
+    r->addSet("VS", &VS);
+    r->addSet("TS", &TS);
+    r->addSet("QS", &QS);
+    double pred = r->predict(userid,movieid);
+    printf("pred: %lf\n", pred);
+    return pred;
+}
+}
+
 
 /* ========================================================================= *
  * main
@@ -184,7 +208,15 @@ int main(int argc, char** argv) {
 		  }
 		printf("training...\n");
 		// Train!
-		ahrbmcf->train(); 
+		ahrbmcf->train();
+		int user = 123;
+		int movie = 123;
+		double pred = ahrbmcf->predict(user, movie);
+		printf("predict user%d movie%d: %lf\n", user, movie, pred);
+ 
+		string model_name="model_ahrbmcf";
+		ahrbmcf->save(model_name);
+
 		// ahrbmcf->pretrain();
 		 
 		//ahrbmcf.train();
