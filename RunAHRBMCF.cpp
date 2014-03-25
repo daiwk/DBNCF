@@ -23,11 +23,19 @@
 #include "AHRBMCF.h"
 // #include <mpi.h>
 
+#include <vector>
+#include <algorithm>
+
 using namespace std;
 using namespace boost::program_options;
 
 extern "C" 
 {
+    
+bool comp(pair<int, double> a, pair<int, double> b) {
+    return a.second > b.second;
+}
+
 double predict_ratings(int userid, int movieid)
 {
     AHRBMCF* r = new AHRBMCF("model_ahrbmcf");
@@ -48,6 +56,45 @@ double predict_ratings(int userid, int movieid)
     printf("pred: %lf\n", pred);
     return pred;
 }
+
+void recommend_top_k(int userid, int k, int* res)
+{
+    cout << "userid:" << userid << endl;
+    AHRBMCF* r = new AHRBMCF("model_ahrbmcf");
+    Dataset LS("svn_dir/data/bin/LS.bin.small-changeUserNum-1");
+    Dataset TS("svn_dir/data/bin/TS.bin.small-changeUserNum-1");
+    Dataset QS("svn_dir/data/bin/TS.bin.small-changeUserNum-1");
+    Dataset VS("svn_dir/data/bin/TS.bin.small-changeUserNum-1");
+//  Dataset LS("/home/daiwk/media-dir/DATA/daiwk/mpi/data/bin/LS.bin.small-changeUserNum-1");
+//  Dataset TS("/home/daiwk/media-dir/DATA/daiwk/mpi/data/bin/TS.bin.small-changeUserNum-1");
+//  Dataset QS("/home/daiwk/media-dir/DATA/daiwk/mpi/data/bin/TS.bin.small-changeUserNum-1");
+//  Dataset VS("/home/daiwk/media-dir/DATA/daiwk/mpi/data/bin/TS.bin.small-changeUserNum-1");
+    
+//    r->input_layer->addSet("LS", &LS);
+    // 这里是要对测试集进行预测，而原来的predict函数是对LS进行预测
+    r->input_layer->addSet("LS", &TS);
+    r->input_layer->addSet("VS", &VS);
+    r->input_layer->addSet("TS", &TS);
+    r->input_layer->addSet("QS", &QS);
+
+    vector<pair<int, double> > vec_final;
+
+    int n = TS.users[userid];
+    for(int m = TS.index[n]; m < TS.index[n] + TS.count[n]; m++) {
+        int i = TS.ids[m];
+        vec_final.push_back(pair<int, double>(i, r->predict(userid, i)));
+    }
+    sort(vec_final.begin(), vec_final.end(), comp);
+
+//    res = new int[k];
+    for(int i = 0; i < k; i++) {
+        cout << vec_final[i].first << " " << vec_final[i].second <<endl;
+        res[i] = vec_final[i].first;
+    }
+
+    return;
+}
+
 }
 
 
