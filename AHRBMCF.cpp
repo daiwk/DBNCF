@@ -125,10 +125,10 @@ AHRBMCF::AHRBMCF(string filename) : Model(CLASS_AHRBMCF)
 	// 初始化input_layer
 	// input_layer是正常的rbmcf，使用原来的RBM参数,隐含层节点数使用配置值。
 	string input_layer_name = "input_layer.rbmcf";
-	RBMCF in_cf = RBMCF();
-	in_cf.setParameter("F", &hidden_layer_sizes[0], sizeof(int));
-	in_cf.reset();
-	in_cf.save(input_layer_name);
+//	RBMCF in_cf = RBMCF();
+//	in_cf.setParameter("F", &hidden_layer_sizes[0], sizeof(int));
+//	in_cf.reset();
+//	in_cf.save(input_layer_name);
 	input_layer = new RBMCF(input_layer_name);
 
 	// 初始化hidden_layers
@@ -152,20 +152,20 @@ AHRBMCF::AHRBMCF(string filename) : Model(CLASS_AHRBMCF)
 		sprintf(ss, "hidden_layer-%d.rbm", i + 1);
 		string rbm_name = ss;
 
-		RBMBASIC r = RBMBASIC();
-		r.setParameter("M", &hidden_layer_sizes[i], sizeof(int));
-		r.setParameter("F", &hidden_layer_sizes[i + 1], sizeof(int));
-		r.reset();
-		r.save(rbm_name);
+//		RBMBASIC r = RBMBASIC();
+//		r.setParameter("M", &hidden_layer_sizes[i], sizeof(int));
+//		r.setParameter("F", &hidden_layer_sizes[i + 1], sizeof(int));
+//		r.reset();
+//		r.save(rbm_name);
 		hidden_layers[i] = new RBMBASIC(rbm_name);
 	}
 
 	// 初始化output_layer
 	string output_layer_name = "output_layer.rbmcf";
-	RBMCF out_cf = RBMCF();
-	out_cf.setParameter("F", &hidden_layer_sizes[hidden_layer_num - 1], sizeof(int));
-	out_cf.reset();
-	out_cf.save(output_layer_name);
+//	RBMCF out_cf = RBMCF();
+//	out_cf.setParameter("F", &hidden_layer_sizes[hidden_layer_num - 1], sizeof(int));
+//	out_cf.reset();
+//	out_cf.save(output_layer_name);
 	output_layer = new RBMCF(output_layer_name);
 
 	// 默认的verbose及输出重定向
@@ -1383,15 +1383,15 @@ void AHRBMCF::save(string filename)
 
 	// Write parameters
 	// 等价于out.write((char*) getParameter("train_epochs"), sizeof (int));
-	out.write((char*) train_epochs, sizeof (int));
+	out.write((char*) &train_epochs, sizeof (int));
 
 	// 等价于out.write((char*) getParameter("batch_size"), sizeof (int));
-	out.write((char*) batch_size, sizeof (int));
+	out.write((char*) &batch_size, sizeof (int));
 
 	// 等价于out.write((char*) getParameter("hidden_layer_num"), sizeof(int));
-	out.write((char*) hidden_layer_num, sizeof(int));
+	out.write((char*) &hidden_layer_num, sizeof(int));
 
-	out.write((char*) hidden_layer_sizes, hidden_layer_num * sizeof (int));
+	out.write((char*) &hidden_layer_sizes, hidden_layer_num * sizeof (int));
 
 	out.close();
 

@@ -40,10 +40,10 @@ double predict_ratings(int userid, int movieid)
 //  Dataset QS("/home/daiwk/media-dir/DATA/daiwk/mpi/data/bin/TS.bin.small-changeUserNum-1");
 //  Dataset VS("/home/daiwk/media-dir/DATA/daiwk/mpi/data/bin/TS.bin.small-changeUserNum-1");
     
-    r->addSet("LS", &LS);
-    r->addSet("VS", &VS);
-    r->addSet("TS", &TS);
-    r->addSet("QS", &QS);
+    r->input_layer->addSet("LS", &LS);
+    r->input_layer->addSet("VS", &VS);
+    r->input_layer->addSet("TS", &TS);
+    r->input_layer->addSet("QS", &QS);
     double pred = r->predict(userid,movieid);
     printf("pred: %lf\n", pred);
     return pred;
