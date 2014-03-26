@@ -20,6 +20,19 @@ function run_small_mpi()
 
 	type=$1
 	F=$2
+	
+	epoch=30
+	batch=100
+	hsize=200
+	hlnum=3
+	
+	eps_w=0.0015 #default 0.0015
+	eps_vb=0.0012 #default 0.0012
+	eps_hb=0.1 #default 0.1
+	eps_d=0.001 #default 0.001
+	weight_cost=0.0001 #default 0.0001
+	momentum=0.95 #default 0.95
+	annealing=2
 
 	LS=${datadir}/"data/bin/LS.bin.small-changeUserNum-1"
 	TS=${datadir}/"data/bin/TS.bin.small-changeUserNum-1"
@@ -32,15 +45,15 @@ function run_small_mpi()
 
 	#run_cmd="./RunRBMCF 
 	#run_cmd="mpirun -machinefile ${machines} -np 4 RunRBMCF
-	run_cmd="./RunRBMCF
+	run_cmd="./RunRBMCF 
 		--LS ${LS}
 		--TS ${TS} 
 		--QS ${TS} 
 		--VS ${TS} 
 		--F ${F} 
-		--openmp ${type} > ${logdir}/${type}_${log}_${F}
+		--openmp ${type} > ${logdir}/${type}_${log}_F${F}_E${epoch}_B${batch}_HS${hsize}_HL${hlnum}_EW${eps_w}_EVB${eps_vb}_EHB${eps_hb}_ED${eps_d}_WC${weight_cost}_M${momentum}_A${annealing}
 		--verbose 1 
-		--log ${rmsedir}/${type}_${rmse}_${F}  "
+		--log ${rmsedir}/${type}_${rmse}_F${F}_E${epoch}_B${batch}_HS${hsize}_HL${hlnum}_EW${eps_w}_EVB${eps_vb}_EHB${eps_hb}_ED${eps_d}_WC${weight_cost}_M${momentum}_A${annealing}"
 
 	echo ${run_cmd}
 	eval ${run_cmd}
@@ -58,6 +71,19 @@ function run_full_mpi()
 	type=$1
 	F=$2
 
+	epoch=30
+	batch=100
+	hsize=200
+	hlnum=3
+	
+	eps_w=0.0015 #default 0.0015
+	eps_vb=0.0012 #default 0.0012
+	eps_hb=0.1 #default 0.1
+	eps_d=0.001 #default 0.001
+	weight_cost=0.0001 #default 0.0001
+	momentum=0.95 #default 0.95
+	annealing=2
+
 	LS=${datadir}/"data/bin/LS.bin.fengge-changeUserNum-1"
 	TS=${datadir}/"data/bin/TS.bin.fengge-changeUserNum-1"
 	log="log-openmp-full"
@@ -67,16 +93,17 @@ function run_full_mpi()
 	echo "starting openmp ${type} at:"
 	eval ${date}
 
-	#run_cmd="mpirun -machinefile ${machines} -np 4 RunRBMCF
-	run_cmd="./RunRBMCF
+	#run_cmd="./RunRBMCF 
+	#run_cmd="mpirun -machinefile ${machines} -np 4 RunRBMCF 
+	run_cmd="./RunRBMCF 
 		--LS ${LS}
 		--TS ${TS} 
 		--QS ${TS} 
 		--VS ${TS} 
 		--F ${F} 
-		--openmp ${type} > ${logdir}/${type}_${log}_${F}
+		--openmp ${type} > ${logdir}/${type}_${log}_F${F}_E${epoch}_B${batch}_HS${hsize}_HL${hlnum}_EW${eps_w}_EVB${eps_vb}_EHB${eps_hb}_ED${eps_d}_WC${weight_cost}_M${momentum}_A${annealing}
 		--verbose 1 
-		--log ${rmsedir}/${type}_${rmse}_${F}  "
+		--log ${rmsedir}/${type}_${rmse}_F${F}_E${epoch}_B${batch}_HS${hsize}_HL${hlnum}_EW${eps_w}_EVB${eps_vb}_EHB${eps_hb}_ED${eps_d}_WC${weight_cost}_M${momentum}_A${annealing}"
 
 	echo ${run_cmd}
 	eval ${run_cmd}
@@ -101,7 +128,7 @@ function main()
 	# $2: F
 	run_small_mpi 1 28
  #	run_small_mpi 0 28
-# 	run_full_mpi 1 20
+# 	run_full_mpi 1 28
  #	run_full 0 20
 
 }
