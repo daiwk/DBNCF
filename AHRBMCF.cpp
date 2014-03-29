@@ -283,7 +283,7 @@ void AHRBMCF::pretrain_old_version(string dataset, bool reset)
 						}
 						else {
 							// sample hl from hl-1
-							bool reset = false;
+							bool reset = false;//false;
 							if(epoch == 0)
 								reset = true;
 	
