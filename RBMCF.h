@@ -60,7 +60,7 @@ public:
     
     // 只更新LS的某些batch
     // batch: 此minbatch的第一个user的下标
-    virtual void train_batch(string dataset="LS", bool reset=true, int batch=0);
+    virtual void train_batch(string dataset="LS", bool reset=true, int batch=0, int batch_size=100);
     
     // Attributes
     int N;

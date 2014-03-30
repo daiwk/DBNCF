@@ -277,7 +277,7 @@ void AHRBMCF::pretrain_old_version(string dataset, bool reset)
 							// sample h from v
 							bool reset = false;
 							//#pragma omp critical
-							input_layer->train_batch(dataset, reset, batch);
+							input_layer->train_batch(dataset, reset, batch, batch_size);
 	
 							//将训练出来的结果给下一层用【train_full里一开始时候就有一个read的操作了,读前一个rbm的hb和vb】
 						}

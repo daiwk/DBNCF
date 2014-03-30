@@ -1079,10 +1079,10 @@ void RBMCF::update_d(double* d_acc, bool* watched, int nth) {
     }
 }
 
-void RBMCF::train_batch(string dataset, bool reset, int batch) {
+void RBMCF::train_batch(string dataset, bool reset, int batch, int batch_size) {
     // Pop parameters
     int epochs = *(int*) getParameter("epochs");
-    int batch_size = *(int*) getParameter("batch_size");
+//    int batch_size = *(int*) getParameter("batch_size");
     int cd_steps = *(int*) getParameter("cd_steps");
     bool verbose = *(bool*) getParameter("verbose");
     ostream* out = *(ostream**) getParameter("log");
