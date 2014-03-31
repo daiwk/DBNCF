@@ -21,9 +21,9 @@ function run_small_mpi()
 	type=$1
 	F=$2
 	
-	epoch=30
-	batch=100
-	hsize=200
+	epoch=100
+	batch=50
+	hsize=500
 	hlnum=3
 	
 	eps_w=0.0015 #default 0.0015
