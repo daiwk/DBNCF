@@ -193,7 +193,7 @@ DBNCF::~DBNCF()
 // Model的函数
 void DBNCF::train(string dataset, bool reset) 
 {
-	// pretrain(dataset, reset);
+	pretrain(dataset, reset);
 
 	pretrain_old_version(dataset, reset);
 	printf("full RBSE: %lf\n", test("LS"));
@@ -427,6 +427,12 @@ void DBNCF::pretrain_old_version(string dataset, bool reset)
 
 void DBNCF::pretrain(string dataset, bool reset)
 {
+	ostream* out = *(ostream**) getParameter("log");
+
+	int batch_size = *(int*) getParameter("batch_size");
+	printf("batch_size: %d\n", batch_size);
+	printf("train_epochs: %d\n", train_epochs);
+	bool verbose = *(bool*) getParameter("verbose");
 
 	Dataset* LS = sets[dataset];
 	Dataset* QS = sets["QS"];
@@ -448,7 +454,7 @@ void DBNCF::pretrain(string dataset, bool reset)
 	double total_error = 0.;
 	int count = 0;
 
-	printf("starting test...\n");
+	printf("starting pretrain...\n");
 	//    for (int i = 0; i < hidden_layer_num; i++) {
 
 	int F = input_layer->F;
@@ -476,19 +482,18 @@ void DBNCF::pretrain(string dataset, bool reset)
 	double** hidden_hs = new double* [hidden_layer_num - 1];
 	double** hidden_hp = new double* [hidden_layer_num - 1];
 
-
 	for (int l = 0; l < hidden_layer_num - 1; l++) {
 
-		int hidden_M = hidden_layers[l]->M;
-		int hidden_K = hidden_layers[l]->K;
-		int hidden_F = hidden_layers[l]->F;
+	//	int hidden_M = hidden_layers[l]->M;
+	//	int hidden_K = hidden_layers[l]->K;
+	//	int hidden_F = hidden_layers[l]->F;
 
-		hidden_vs[l] = new double[hidden_M * hidden_K];
-		hidden_vp[l] = new double[hidden_M * hidden_K];
-		hidden_hs[l] = new double[hidden_F];
-		hidden_hp[l] = new double[hidden_F];
+		hidden_vs[l] = new double[hidden_layers[l]->M * hidden_layers[l]->K];
+		hidden_vp[l] = new double[hidden_layers[l]->M * hidden_layers[l]->K];
+		hidden_hs[l] = new double[hidden_layers[l]->F];
+		hidden_hp[l] = new double[hidden_layers[l]->F];
 
-		int* mask_visible = new int[hidden_M];
+		int* mask_visible = new int[hidden_layers[l]->M];
 	}
 
 
@@ -500,145 +505,175 @@ void DBNCF::pretrain(string dataset, bool reset)
 	double* output_hs = new double[output_F];
 	double* output_hp = new double[output_F];
 
+	*out <<"EPOch\tgen-RMSE\ttrain-RMSE\tinput\\full\\out\ttime\n";
+	out->flush();
+
+
 	// Start calculating the running time
 	struct timeval start;
 	struct timeval end;
 	unsigned long usec;
 	gettimeofday(&start, NULL);
 
-	//	for(int epoch = 0; epoch < train_epochs; epoch++) {
 
-#pragma omp parallel for
-	for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
+	for(int epoch = 0; epoch < train_epochs; epoch++) {
 
-		// 每个batch,首先赋值给input的vs，然后得到hp，再得到hs
-		for (int n = batch; n < min(batch + batch_size, LS->nb_rows); n++) {
+        struct timeval start_train;
+        struct timeval end_train;
+        unsigned long usec_train;
+        gettimeofday(&start_train, NULL);
 
-
-			zero(input_w_acc, M * K * F);
-			zero(input_w_count, M * K * F);
-			zero(input_vb_acc, M * K);
-			zero(input_vb_count, M * K);
-			zero(input_hb_acc, F);
-
-			//    if (conditional) {
-			zero(input_watched, M);
-			//    }
-
-
-			// Set user n data on the visible units
-			for (int m = LS->index[n]; m < LS->index[n] + LS->count[n]; m++) {
-				int i = LS->ids[m];
-				int ik_0 = i * K; // _ik(i, 0);
-
-				for (int k = 0; k < K; k++) {
-					input_vs[ik_0 + k] = 0.;
-				}
-
-				input_vs[ik_0 + LS->ratings[m] - 1] = 1.;
-			}
-
-			// Compute ^p = p(h | V, d) into hp
-
-			input_layer->update_hidden(input_vs, &LS->ids[LS->index[n]], LS->count[n], &QS->ids[QS->index[n]], QS->count[n], input_hp);
-			input_layer->sample_hidden(input_hp, input_hs);
-			// Deallocate data structures
-
-			// 这里做前馈传导，用vp去传。。
-			// 最后一层hp传给输出层，用sigmoid算最终的hp。。
-
-			for (int l = 0; l < hidden_layer_num - 1; l++) {
-
-
-				int hidden_M = hidden_layers[l]->M;
-				int hidden_K = hidden_layers[l]->K;
-				int hidden_F = hidden_layers[l]->F;
-
-				//				hidden_vs[l] = new double[hidden_M * hidden_K];
-				//				hidden_vp[l] = new double[hidden_M * hidden_K];
-				//				hidden_hs[l] = new double[hidden_F];
-				//				hidden_hp[l] = new double[hidden_F];
-
-				for (int i = 0; i < hidden_M; i++) {
-					if (l == 0) {
-						hidden_vs[l][i] = input_hs[i];
+	    for (int i = 0; i < hidden_layer_num - 1; i++) {
+		#pragma omp parallel for
+			for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
+		
+				// 每个batch,首先赋值给input的vs，然后得到hp，再得到hs
+				for (int n = batch; n < min(batch + batch_size, LS->nb_rows); n++) {
+		
+		
+					zero(input_w_acc, M * K * F);
+					zero(input_w_count, M * K * F);
+					zero(input_vb_acc, M * K);
+					zero(input_vb_count, M * K);
+					zero(input_hb_acc, F);
+		
+					//    if (conditional) {
+					zero(input_watched, M);
+					//    }
+		
+		
+					// Set user n data on the visible units
+					for (int m = LS->index[n]; m < LS->index[n] + LS->count[n]; m++) {
+						int i = LS->ids[m];
+						int ik_0 = i * K; // _ik(i, 0);
+		
+						for (int k = 0; k < K; k++) {
+							input_vs[ik_0 + k] = 0.;
+						}
+		
+						input_vs[ik_0 + LS->ratings[m] - 1] = 1.;
 					}
-					else {
-						hidden_vs[l][i] = hidden_hs[l - 1][i];
+		
+					// Compute ^p = p(h | V, d) into hp
+		
+					input_layer->update_hidden(input_vs, &LS->ids[LS->index[n]], LS->count[n], &QS->ids[QS->index[n]], QS->count[n], input_hp);
+					input_layer->sample_hidden(input_hp, input_hs);
+					// Deallocate data structures
+		
+					// 这里做前馈传导，用vp去传。。
+					// 最后一层hp传给输出层，用sigmoid算最终的hp。。
+
+					if(epoch == 0)
+#pragma omp critical
+						hidden_layers[i]->reset();
+	
+					for (int l = 0; l < i; l++) {
+		
+	//多线程的时候，不知为啥这个值一直不变。。。所以强制了。。。。各自给->xxx	
+//						int hidden_M = hidden_layers[l]->M;
+//						int hidden_K = hidden_layers[l]->K;
+//						int hidden_F = hidden_layers[l]->F;
+		
+						//				hidden_vs[l] = new double[hidden_M * hidden_K];
+						//				hidden_vp[l] = new double[hidden_M * hidden_K];
+						//				hidden_hs[l] = new double[hidden_F];
+						//				hidden_hp[l] = new double[hidden_F];
+		
+						for (int j = 0; j < hidden_layers[l]->M; j++) {
+							if (l == 0) {
+								hidden_vs[l][j] = input_hs[j];
+							}
+							else {
+								hidden_vs[l][j] = hidden_hs[l - 1][j];
+							}
+						}
+		
+						int* mask_visible = new int[hidden_layers[l]->M];
+						for(int ind = 0; ind < hidden_layers[l]->M; ind++) {
+							mask_visible[ind] = ind;
+						}
+						
+		
+						hidden_layers[l]->update_hidden_p(hidden_vs[l], &mask_visible[0], hidden_layers[l]->M, hidden_hp[l]);
+						hidden_layers[l]->sample_hidden(hidden_hp[l], hidden_hs[l]);
+		
+						delete [] mask_visible;
+		
+					}  // End of for (int l = 0; l < hidden_layer_num - 1; l++)
+		
+		
+				} // End of for (int n = batch; n < min(batch + batch_size, LS->nb_rows); n++)
+				if (i == 0) {
+
+					bool reset = false;
+					#pragma omp critical
+					input_layer->train_batch(dataset, reset, batch, batch_size);
+				}
+				else {
+					bool reset = false;//false;
+					if(epoch == 0)
+						reset = true;
+
+					// 注意下标：此函数读rbm-h*-l，输出rbm-h*-l+1
+#pragma omp critical
+					hidden_layers[i - 1]->train_full(reset, i - 1); 
+					printf("layer %d trained\n", i - 1); 
+					int hidden_size = hidden_layers[i - 1]->M;
+					printf("hidden_size: %d\n", hidden_size);
+
+					for(int m = 0; m < hidden_size; m++) {
+
+						double now_vb = hidden_layers[i - 1]->vb[m];
+
+						// l=1: 第一个rbmbasic，它的上一层是input_layer
+						if( i == 1) {
+
+							//								printf("pre_hb: %lf ", input_layer->hb[m]);
+#pragma omp critical
+							input_layer->hb[m] = now_vb;
+							//								printf("now_hb: %lf\n ", input_layer->hb[m]);
+						}
+						else {
+
+#pragma omp critical
+							input_layer->hb[m] = now_vb;
+							hidden_layers[i - 2]->hb[m] = now_vb;
+							//								printf("now_hb: %lf\n ", hidden_layers[l - 2]->hb[m]);
+						}
 					}
-				}
 
-				int* mask_visible = new int[hidden_M];
-				for(int ind = 0; ind < hidden_M; ind++) {
-					mask_visible[ind] = ind;
-				}
-
-
-				hidden_layers[l]->update_hidden_p(hidden_vs[l], &mask_visible[0], hidden_M, hidden_hp[l]);
-				hidden_layers[l]->sample_hidden(hidden_hp[l], hidden_hs[l]);
-
-				delete [] mask_visible;
-
-			}  // End of for (int l = 0; l < hidden_layer_num - 1; l++)
-
-			int output_F = hidden_layers[hidden_layer_num - 2]->F;
-			int output_M = output_layer->M;
-
-			int* mask_hidden= new int[output_F];
-			for(int ind = 0; ind < output_F; ind++) {
-				mask_hidden[ind] = ind;
-			}
-
-			int* mask_visible = new int[output_M];
-			for(int ind = 0; ind < output_M; ind++) {
-				mask_visible[ind] = ind;
-			}
-
-			// output:h->v,update visible,算vp的期望
-
-			output_layer->update_visible(hidden_hs[hidden_layer_num - 2], output_vp, &mask_hidden[0], output_F);
-
-			delete [] mask_hidden;
-			delete [] mask_visible;
-
-			// 开始计算残差，准备bp
-
-			//			for (int n = 0; n < min(batch + batch_size, LS->nb_rows); n++) {
-
-			// 只更新和这个user有关的那几个节点，每个节点k维
-			for (int m = LS->index[n]; m < LS->index[n] + LS->count[n]; m++) {
-
-				int i = LS->ids[m];
-				int ik_0 = _ik(i, 0);
-				double prediction = 0.;
-				double *delta_output = new double[output_M * output_K];
-
-				for (int k = 0; k < K; k++) {
-
-					prediction += output_vp[ik_0 + k] * (k + 1);
-					double error = prediction - LS->ratings[m];
-					//						cout << "error: " << error << " prediction: " << prediction << " rating: " << TS->ratings[m] << " ik_0:" << ik_0 << " upbound: " << K*M <<endl;
-					// cout << " n: " << n << " ids: " << i << " count: " << count << endl;
-
-					total_error += error * error;
-					count++;
 
 				}
+	
+		
+			}  // End of for (int batch = 0; batch < LS->nb_rows; batch += batch_size)
+	    }  // End of for (int i = 0; i < hidden_layer_num - 1; i++)
 
-				delete [] delta_output;
+#pragma omp single
+		{
+			cout << "calc input rmse...\n";
+			char rmse_input[1000];
+       	    gettimeofday(&end_train, NULL);
+            usec_train = 1000000 * (end_train.tv_sec-start_train.tv_sec) + end_train.tv_usec - start_train.tv_usec;
+			sprintf(rmse_input, "%d\t%lf\t%lf\tinput\t%lf\n", epoch, input_layer->test("TS"), input_layer->test("LS"), usec_train / 1000000.);
+			*out << rmse_input;
 
-			} //遍历完一个batch的所有user
+			cout << "calc full rmse...\n";
+			char rmse_full[1000];
+			sprintf(rmse_full, "%d\t%lf\t%lf\tfull\n", epoch, test("TS"), test("LS"));
+			*out << rmse_full;
 
-			// 开始往回走，更新w和b,但是，d呢？
+			//		cout << "calc output rmse...\n";
+			//		char rmse_output[1000];
+			//		sprintf(rmse_output, "%d\t%lf\t%lf\toutput\n", epoch, output_layer->test("TS"), output_layer->test("LS"));
+			//		*out << rmse_output;
 
-			//			}
+			out->flush();
+		}
 
-		} // End of for (int n = batch; n < min(batch + batch_size, LS->nb_rows); n++)
 
 
-	}  // End of for (int batch = 0; batch < LS->nb_rows; batch += batch_size)
-	//	}  // End of for(int epoch = 0; epoch < train_epochs; epoch++)
-	//    }  // End of for (int l = 0; l < hidden_layer_num - 1; l++)
+	}  // End of for(int epoch = 0; epoch < train_epochs; epoch++)
 
 	if (input_vs != NULL) delete[] input_vs;
 	if (input_vp != NULL) delete[] input_vp;
@@ -979,19 +1014,18 @@ double DBNCF::test(string dataset)
 	double** hidden_hs = new double* [hidden_layer_num - 1];
 	double** hidden_hp = new double* [hidden_layer_num - 1];
 
-
 	for (int l = 0; l < hidden_layer_num - 1; l++) {
 
-		int hidden_M = hidden_layers[l]->M;
-		int hidden_K = hidden_layers[l]->K;
-		int hidden_F = hidden_layers[l]->F;
+	//	int hidden_M = hidden_layers[l]->M;
+	//	int hidden_K = hidden_layers[l]->K;
+	//	int hidden_F = hidden_layers[l]->F;
 
-		hidden_vs[l] = new double[hidden_M * hidden_K];
-		hidden_vp[l] = new double[hidden_M * hidden_K];
-		hidden_hs[l] = new double[hidden_F];
-		hidden_hp[l] = new double[hidden_F];
+		hidden_vs[l] = new double[hidden_layers[l]->M * hidden_layers[l]->K];
+		hidden_vp[l] = new double[hidden_layers[l]->M * hidden_layers[l]->K];
+		hidden_hs[l] = new double[hidden_layers[l]->F];
+		hidden_hp[l] = new double[hidden_layers[l]->F];
 
-		int* mask_visible = new int[hidden_M];
+		int* mask_visible = new int[hidden_layers[l]->M];
 	}
 
 
@@ -1062,7 +1096,7 @@ double DBNCF::test(string dataset)
 				//				hidden_hs[l] = new double[hidden_F];
 				//				hidden_hp[l] = new double[hidden_F];
 
-				for (int i = 0; i < hidden_M; i++) {
+				for (int i = 0; i < hidden_layers[l]->M; i++) {
 					if (l == 0) {
 						hidden_vs[l][i] = input_hs[i];
 					}
@@ -1071,13 +1105,13 @@ double DBNCF::test(string dataset)
 					}
 				}
 
-				int* mask_visible = new int[hidden_M];
-				for(int ind = 0; ind < hidden_M; ind++) {
+				int* mask_visible = new int[hidden_layers[l]->M];
+				for(int ind = 0; ind < hidden_layers[l]->M; ind++) {
 					mask_visible[ind] = ind;
 				}
 
 
-				hidden_layers[l]->update_hidden_p(hidden_vs[l], &mask_visible[0], hidden_M, hidden_hp[l]);
+				hidden_layers[l]->update_hidden_p(hidden_vs[l], &mask_visible[0], hidden_layers[l]->M, hidden_hp[l]);
 				hidden_layers[l]->sample_hidden(hidden_hp[l], hidden_hs[l]);
 
 				delete [] mask_visible;
@@ -1087,19 +1121,19 @@ double DBNCF::test(string dataset)
 			int output_F = hidden_layers[hidden_layer_num - 2]->F;
 			int output_M = output_layer->M;
 
-			int* mask_hidden= new int[output_F];
-			for(int ind = 0; ind < output_F; ind++) {
+			int* mask_hidden= new int[hidden_layers[hidden_layer_num - 2]->F];
+			for(int ind = 0; ind < hidden_layers[hidden_layer_num - 2]->F; ind++) {
 				mask_hidden[ind] = ind;
 			}
 
-			int* mask_visible = new int[output_M];
-			for(int ind = 0; ind < output_M; ind++) {
+			int* mask_visible = new int[output_layer->M];
+			for(int ind = 0; ind < output_layer->M; ind++) {
 				mask_visible[ind] = ind;
 			}
 
 			// output:h->v,update visible,算vp的期望
 
-			output_layer->update_visible(hidden_hs[hidden_layer_num - 2], output_vp, &mask_hidden[0], output_F);
+			output_layer->update_visible(hidden_hs[hidden_layer_num - 2], output_vp, &mask_hidden[0], hidden_layers[hidden_layer_num - 2]->F);
 
 			delete [] mask_hidden;
 			delete [] mask_visible;
