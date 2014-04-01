@@ -252,7 +252,7 @@ void AHRBMCF::pretrain_old_version(string dataset, bool reset)
 	output_layer->addSet("VS", VS);
 	output_layer->addSet("TS", TS);
 
-	*out <<"EPOch\tgen-RMSE\ttrain-RMSE\tinput\\full\\out\n";
+	*out <<"EPOch\tgen-RMSE\ttrain-RMSE\tinput\\full\\out\ttime\n";
 	out->flush();
 
 	int train_critia = 1;
@@ -262,6 +262,11 @@ void AHRBMCF::pretrain_old_version(string dataset, bool reset)
 
 
 		for(int epoch = 0; epoch < train_epochs; epoch++) {
+
+	        struct timeval start_train;
+	        struct timeval end_train;
+	        unsigned long usec_train;
+	        gettimeofday(&start_train, NULL);
 
 			for (int i = 0; i < hidden_layer_num; i++) {
 
@@ -344,13 +349,15 @@ void AHRBMCF::pretrain_old_version(string dataset, bool reset)
 			{
 				cout << "calc input rmse...\n";
 				char rmse_input[1000];
-				sprintf(rmse_input, "%d\t%lf\t%lf\tinput\n", epoch, input_layer->test("TS"), input_layer->test("LS"));
+           	    gettimeofday(&end_train, NULL);
+                usec_train = 1000000 * (end_train.tv_sec-start_train.tv_sec) + end_train.tv_usec - start_train.tv_usec;
+				sprintf(rmse_input, "%d\t%lf\t%lf\tinput\t%lf\n", epoch, input_layer->test("TS"), input_layer->test("LS"), usec_train / 1000000.);
 				*out << rmse_input;
 
-				cout << "calc full rmse...\n";
-				char rmse_full[1000];
-				sprintf(rmse_full, "%d\t%lf\t%lf\tfull\n", epoch, test("TS"), test("LS"));
-				*out << rmse_full;
+//				cout << "calc full rmse...\n";
+//				char rmse_full[1000];
+//				sprintf(rmse_full, "%d\t%lf\t%lf\tfull\n", epoch, test("TS"), test("LS"));
+//				*out << rmse_full;
 
 				//		cout << "calc output rmse...\n";
 				//		char rmse_output[1000];

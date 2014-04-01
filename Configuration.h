@@ -118,7 +118,7 @@ namespace Config {
 
         /* Training parameters */
         static const int EPOCHS = 5;
-        static const int BATCH_SIZE = 500;
+        static const int BATCH_SIZE = 100;
         static const int CD_STEPS = 1;
         static const double EPS_W = 0.0015;
         static const double EPS_VB = 0.0012;
@@ -183,9 +183,9 @@ namespace Config {
 
 	namespace AHRBMCF {
         static const int TRAIN_EPOCHS = 100; // AHRBMCF的训练轮数
-        static const int BATCH_SIZE = 50;  // 默认100;
+        static const int BATCH_SIZE = 100;  // 默认100;
 	// HL是HiddenLayer的缩写
-        static const int HL_SIZE = 500;  // 默认20;
+        static const int HL_SIZE = 20;  // 默认20;
         static const int HL_NUM = 3;  // 默认2;
         // Misc
         static const bool VERBOSE = true;
