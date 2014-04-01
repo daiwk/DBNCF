@@ -428,13 +428,6 @@ void DBNCF::pretrain_old_version(string dataset, bool reset)
 void DBNCF::pretrain(string dataset, bool reset)
 {
 
-	// Pop parameters
-	int batch_size = *(int*) getParameter("batch_size");
-	printf("batch_size: %d\n", batch_size);
-	printf("train_epochs: %d\n", train_epochs);
-	bool verbose = *(bool*) getParameter("verbose");
-	ostream* out = *(ostream**) getParameter("log");
-
 	Dataset* LS = sets[dataset];
 	Dataset* QS = sets["QS"];
 	Dataset* TS = sets["TS"];
@@ -450,15 +443,6 @@ void DBNCF::pretrain(string dataset, bool reset)
 	input_layer->addSet("QS", QS);
 	input_layer->addSet("VS", VS);
 	input_layer->addSet("TS", TS);
-
-	output_layer->addSet(dataset, LS);
-	output_layer->addSet("QS", QS);
-	output_layer->addSet("VS", VS);
-	output_layer->addSet("TS", TS);
-
-	*out <<"EPOch\tgen-RMSE\ttrain-RMSE\tinput\\full\\out\n";
-	out->flush();
-
 
 	// Initialization
 	double total_error = 0.;
@@ -522,144 +506,139 @@ void DBNCF::pretrain(string dataset, bool reset)
 	unsigned long usec;
 	gettimeofday(&start, NULL);
 
-	//    #pragma omp parallel
-	{
-		for (int i = 0; i < hidden_layer_num; i++) {
+	//	for(int epoch = 0; epoch < train_epochs; epoch++) {
 
-			for(int epoch = 0; epoch < train_epochs; epoch++) {
+#pragma omp parallel for
+	for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
 
-				//	#pragma omp parallel for
-				for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
-
-					// 每个batch,首先赋值给input的vs，然后得到hp，再得到hs
-					for (int n = batch; n < min(batch + batch_size, LS->nb_rows); n++) {
+		// 每个batch,首先赋值给input的vs，然后得到hp，再得到hs
+		for (int n = batch; n < min(batch + batch_size, LS->nb_rows); n++) {
 
 
-						zero(input_w_acc, M * K * F);
-						zero(input_w_count, M * K * F);
-						zero(input_vb_acc, M * K);
-						zero(input_vb_count, M * K);
-						zero(input_hb_acc, F);
+			zero(input_w_acc, M * K * F);
+			zero(input_w_count, M * K * F);
+			zero(input_vb_acc, M * K);
+			zero(input_vb_count, M * K);
+			zero(input_hb_acc, F);
 
-						//    if (conditional) {
-						zero(input_watched, M);
-						//    }
-
-
-						// Set user n data on the visible units
-						for (int m = LS->index[n]; m < LS->index[n] + LS->count[n]; m++) {
-							int i = LS->ids[m];
-							int ik_0 = i * K; // _ik(i, 0);
-
-							for (int k = 0; k < K; k++) {
-								input_vs[ik_0 + k] = 0.;
-							}
-
-							input_vs[ik_0 + LS->ratings[m] - 1] = 1.;
-						}
-
-						// Compute ^p = p(h | V, d) into hp
-
-						input_layer->update_hidden(input_vs, &LS->ids[LS->index[n]], LS->count[n], &QS->ids[QS->index[n]], QS->count[n], input_hp);
-						input_layer->sample_hidden(input_hp, input_hs);
-						// Deallocate data structures
-					} // End of for (int n = batch; n < min(batch + batch_size, LS->nb_rows); n++)
-
-					// 这里做前馈传导，用vp去传。。
-					// 最后一层hp传给输出层，用sigmoid算最终的hp。。
-
-					for (int l = 0; l < hidden_layer_num - 1; l++) {
+			//    if (conditional) {
+			zero(input_watched, M);
+			//    }
 
 
-						int hidden_M = hidden_layers[l]->M;
-						int hidden_K = hidden_layers[l]->K;
-						int hidden_F = hidden_layers[l]->F;
+			// Set user n data on the visible units
+			for (int m = LS->index[n]; m < LS->index[n] + LS->count[n]; m++) {
+				int i = LS->ids[m];
+				int ik_0 = i * K; // _ik(i, 0);
 
-						//				hidden_vs[l] = new double[hidden_M * hidden_K];
-						//				hidden_vp[l] = new double[hidden_M * hidden_K];
-						//				hidden_hs[l] = new double[hidden_F];
-						//				hidden_hp[l] = new double[hidden_F];
+				for (int k = 0; k < K; k++) {
+					input_vs[ik_0 + k] = 0.;
+				}
 
-						for (int i = 0; i < hidden_M; i++) {
-							if (l == 0) {
-								hidden_vs[l][i] = input_hs[i];
-							}
-							else {
-								hidden_vs[l][i] = hidden_hs[l - 1][i];
-							}
-						}
+				input_vs[ik_0 + LS->ratings[m] - 1] = 1.;
+			}
 
-						int* mask_visible = new int[hidden_M];
-						for(int ind = 0; ind < hidden_M; ind++) {
-							mask_visible[ind] = ind;
-						}
+			// Compute ^p = p(h | V, d) into hp
+
+			input_layer->update_hidden(input_vs, &LS->ids[LS->index[n]], LS->count[n], &QS->ids[QS->index[n]], QS->count[n], input_hp);
+			input_layer->sample_hidden(input_hp, input_hs);
+			// Deallocate data structures
+
+			// 这里做前馈传导，用vp去传。。
+			// 最后一层hp传给输出层，用sigmoid算最终的hp。。
+
+			for (int l = 0; l < hidden_layer_num - 1; l++) {
 
 
-						hidden_layers[l]->update_hidden_p(hidden_vs[l], &mask_visible[0], hidden_M, hidden_hp[l]);
-						hidden_layers[l]->sample_hidden(hidden_hp[l], hidden_hs[l]);
+				int hidden_M = hidden_layers[l]->M;
+				int hidden_K = hidden_layers[l]->K;
+				int hidden_F = hidden_layers[l]->F;
 
-						delete [] mask_visible;
+				//				hidden_vs[l] = new double[hidden_M * hidden_K];
+				//				hidden_vp[l] = new double[hidden_M * hidden_K];
+				//				hidden_hs[l] = new double[hidden_F];
+				//				hidden_hp[l] = new double[hidden_F];
 
-					}  // End of for (int l = 0; l < hidden_layer_num - 1; l++)
-
-					int output_F = hidden_layers[hidden_layer_num - 2]->F;
-					int output_M = output_layer->M;
-
-					int* mask_hidden= new int[output_F];
-					for(int ind = 0; ind < output_F; ind++) {
-						mask_hidden[ind] = ind;
+				for (int i = 0; i < hidden_M; i++) {
+					if (l == 0) {
+						hidden_vs[l][i] = input_hs[i];
 					}
-
-					int* mask_visible = new int[output_M];
-					for(int ind = 0; ind < output_M; ind++) {
-						mask_visible[ind] = ind;
+					else {
+						hidden_vs[l][i] = hidden_hs[l - 1][i];
 					}
+				}
 
-					// output:h->v,update visible,算vp的期望
-
-					output_layer->update_visible(hidden_hs[hidden_layer_num - 2], output_vp, &mask_hidden[0], output_F);
-
-					delete [] mask_hidden;
-					delete [] mask_visible;
-
-					// 开始计算残差，准备bp
-
-					for (int n = 0; n < min(batch + batch_size, LS->nb_rows); n++) {
-
-						// 只更新和这个user有关的那几个节点，每个节点k维
-						for (int m = LS->index[n]; m < LS->index[n] + LS->count[n]; m++) {
-
-							int i = LS->ids[m];
-							int ik_0 = _ik(i, 0);
-							double prediction = 0.;
-							double *delta_output = new double[output_M * output_K];
-
-							for (int k = 0; k < K; k++) {
-
-								prediction += output_vp[ik_0 + k] * (k + 1);
-								double error = prediction - LS->ratings[m];
-								//						cout << "error: " << error << " prediction: " << prediction << " rating: " << TS->ratings[m] << " ik_0:" << ik_0 << " upbound: " << K*M <<endl;
-								// cout << " n: " << n << " ids: " << i << " count: " << count << endl;
-
-								total_error += error * error;
-								count++;
-
-							}
-
-							delete [] delta_output;
-
-						} //遍历完一个batch的所有user
-
-						// 开始往回走，更新w和b,但是，d呢？
-
-					}
+				int* mask_visible = new int[hidden_M];
+				for(int ind = 0; ind < hidden_M; ind++) {
+					mask_visible[ind] = ind;
+				}
 
 
-				}  // End of for (int batch = 0; batch < LS->nb_rows; batch += batch_size)
-			}  // End of for(int epoch = 0; epoch < train_epochs; epoch++)
-		}  // End of for (int l = 0; l < hidden_layer_num - 1; l++)
+				hidden_layers[l]->update_hidden_p(hidden_vs[l], &mask_visible[0], hidden_M, hidden_hp[l]);
+				hidden_layers[l]->sample_hidden(hidden_hp[l], hidden_hs[l]);
 
-	}  // End of omp parallel 
+				delete [] mask_visible;
+
+			}  // End of for (int l = 0; l < hidden_layer_num - 1; l++)
+
+			int output_F = hidden_layers[hidden_layer_num - 2]->F;
+			int output_M = output_layer->M;
+
+			int* mask_hidden= new int[output_F];
+			for(int ind = 0; ind < output_F; ind++) {
+				mask_hidden[ind] = ind;
+			}
+
+			int* mask_visible = new int[output_M];
+			for(int ind = 0; ind < output_M; ind++) {
+				mask_visible[ind] = ind;
+			}
+
+			// output:h->v,update visible,算vp的期望
+
+			output_layer->update_visible(hidden_hs[hidden_layer_num - 2], output_vp, &mask_hidden[0], output_F);
+
+			delete [] mask_hidden;
+			delete [] mask_visible;
+
+			// 开始计算残差，准备bp
+
+			//			for (int n = 0; n < min(batch + batch_size, LS->nb_rows); n++) {
+
+			// 只更新和这个user有关的那几个节点，每个节点k维
+			for (int m = LS->index[n]; m < LS->index[n] + LS->count[n]; m++) {
+
+				int i = LS->ids[m];
+				int ik_0 = _ik(i, 0);
+				double prediction = 0.;
+				double *delta_output = new double[output_M * output_K];
+
+				for (int k = 0; k < K; k++) {
+
+					prediction += output_vp[ik_0 + k] * (k + 1);
+					double error = prediction - LS->ratings[m];
+					//						cout << "error: " << error << " prediction: " << prediction << " rating: " << TS->ratings[m] << " ik_0:" << ik_0 << " upbound: " << K*M <<endl;
+					// cout << " n: " << n << " ids: " << i << " count: " << count << endl;
+
+					total_error += error * error;
+					count++;
+
+				}
+
+				delete [] delta_output;
+
+			} //遍历完一个batch的所有user
+
+			// 开始往回走，更新w和b,但是，d呢？
+
+			//			}
+
+		} // End of for (int n = batch; n < min(batch + batch_size, LS->nb_rows); n++)
+
+
+	}  // End of for (int batch = 0; batch < LS->nb_rows; batch += batch_size)
+	//	}  // End of for(int epoch = 0; epoch < train_epochs; epoch++)
+	//    }  // End of for (int l = 0; l < hidden_layer_num - 1; l++)
 
 	if (input_vs != NULL) delete[] input_vs;
 	if (input_vp != NULL) delete[] input_vp;
@@ -690,8 +669,9 @@ void DBNCF::pretrain(string dataset, bool reset)
 	usec = 1000000 * (end.tv_sec-start.tv_sec) + end.tv_usec - start.tv_usec;
 
 	printf( "File: %s, Function: %s, Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
-	printf("Time of pretrain(): %ld usec[ %lf sec].\n", usec, usec / 1000000.);
+	printf("Time of test(): %ld usec[ %lf sec].\n", usec, usec / 1000000.);
 
+	return;
 }
 
 
@@ -715,6 +695,11 @@ void DBNCF::finetune(string dataset)
 	input_layer->addSet("VS", VS);
 	input_layer->addSet("TS", TS);
 
+	// Initialization
+	double total_error = 0.;
+	int count = 0;
+
+	printf("starting test...\n");
 	//    for (int i = 0; i < hidden_layer_num; i++) {
 
 	int F = input_layer->F;
@@ -742,6 +727,7 @@ void DBNCF::finetune(string dataset)
 	double** hidden_hs = new double* [hidden_layer_num - 1];
 	double** hidden_hp = new double* [hidden_layer_num - 1];
 
+
 	for (int l = 0; l < hidden_layer_num - 1; l++) {
 
 		int hidden_M = hidden_layers[l]->M;
@@ -753,6 +739,7 @@ void DBNCF::finetune(string dataset)
 		hidden_hs[l] = new double[hidden_F];
 		hidden_hp[l] = new double[hidden_F];
 
+		int* mask_visible = new int[hidden_M];
 	}
 
 
@@ -764,88 +751,70 @@ void DBNCF::finetune(string dataset)
 	double* output_hs = new double[output_F];
 	double* output_hp = new double[output_F];
 
-	// 供BP回去的时候使用
-	// BP更新输出层和最后一个隐含层间的权重
-	// BP只是回到第一个隐含层，没有更新隐含层和可见层之间的权重，也没更新可见层的bias和d
-	// 也就是说BP只更新从hidden_layers[0] - hidden_layers[num - 2] 这num - 1个隐含层的bias，还有他们之间的权重
-	// 存放残差
-	double** delta = new double* [hidden_layer_num + 1];
-	double** w_acc = new double* [hidden_layer_num];
-	double** b_acc = new double* [hidden_layer_num];
+	// Start calculating the running time
+	struct timeval start;
+	struct timeval end;
+	unsigned long usec;
+	gettimeofday(&start, NULL);
 
-	for (int l = 0; l < hidden_layer_num - 1; l++) {
+	//	for(int epoch = 0; epoch < train_epochs; epoch++) {
 
-		int hidden_M = hidden_layers[l]->M;
-		int hidden_K = hidden_layers[l]->K;
-		int hidden_F = hidden_layers[l]->F;
+#pragma omp parallel for
+	for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
 
-		delta[l] = new double[hidden_M];
-		w_acc[l] = new double[hidden_F * hidden_M];
-		b_acc[l] = new double[hidden_F];
+		// 每个batch,首先赋值给input的vs，然后得到hp，再得到hs
+		for (int n = batch; n < min(batch + batch_size, LS->nb_rows); n++) {
 
-	}
 
-	delta[hidden_layer_num - 1] = new double[output_layer->M];  
-	w_acc[hidden_layer_num - 1] = new double[output_layer->M];  
-	b_acc[hidden_layer_num - 1] = new double[output_layer->M];  
-	delta[hidden_layer_num] = new double[output_layer->F];  
+			zero(input_w_acc, M * K * F);
+			zero(input_w_count, M * K * F);
+			zero(input_vb_acc, M * K);
+			zero(input_vb_count, M * K);
+			zero(input_hb_acc, F);
 
-	for(int epoch = 0; epoch < train_epochs; epoch++) {
+			//    if (conditional) {
+			zero(input_watched, M);
+			//    }
 
-		//#pragma omp parallel for
-		for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
 
-			// 每个batch,首先赋值给input的vs，然后得到hp，再得到hs
-			for (int n = batch; n < min(batch + batch_size, LS->nb_rows); n++) {
+			// Set user n data on the visible units
+			for (int m = LS->index[n]; m < LS->index[n] + LS->count[n]; m++) {
+				int i = LS->ids[m];
+				int ik_0 = i * K; // _ik(i, 0);
 
-				zero(input_w_acc, M * K * F);
-				zero(input_w_count, M * K * F);
-				zero(input_vb_acc, M * K);
-				zero(input_vb_count, M * K);
-				zero(input_hb_acc, F);
-
-				//    if (conditional) {
-				zero(input_watched, M);
-				//    }
-
-				// Set user n data on the visible units
-				for (int m = LS->index[n]; m < LS->index[n] + LS->count[n]; m++) {
-					int i = LS->ids[m];
-					int ik_0 = i * K; // _ik(i, 0);
-
-					//#pragma omp critical
-					for (int k = 0; k < K; k++) {
-						input_vs[ik_0 + k] = 0.;
-					}
-
-					//#pragma omp critical
-					input_vs[ik_0 + LS->ratings[m] - 1] = 1.;
+				for (int k = 0; k < K; k++) {
+					input_vs[ik_0 + k] = 0.;
 				}
 
-				// Compute ^p = p(h | V, d) into hp
-				//#pragma omp critical				
-				input_layer->update_hidden(input_vs, &LS->ids[LS->index[n]], LS->count[n], &QS->ids[QS->index[n]], QS->count[n], input_hp);
-				//#pragma omp critical				
-				input_layer->sample_hidden(input_hp, input_hs);
-				// Deallocate data structures
-			} // End of for (int n = batch; n < min(batch + batch_size, LS->nb_rows); n++)
+				input_vs[ik_0 + LS->ratings[m] - 1] = 1.;
+			}
+
+			// Compute ^p = p(h | V, d) into hp
+
+			input_layer->update_hidden(input_vs, &LS->ids[LS->index[n]], LS->count[n], &QS->ids[QS->index[n]], QS->count[n], input_hp);
+			input_layer->sample_hidden(input_hp, input_hs);
+			// Deallocate data structures
 
 			// 这里做前馈传导，用vp去传。。
 			// 最后一层hp传给输出层，用sigmoid算最终的hp。。
 
 			for (int l = 0; l < hidden_layer_num - 1; l++) {
 
+
 				int hidden_M = hidden_layers[l]->M;
 				int hidden_K = hidden_layers[l]->K;
 				int hidden_F = hidden_layers[l]->F;
 
+				//				hidden_vs[l] = new double[hidden_M * hidden_K];
+				//				hidden_vp[l] = new double[hidden_M * hidden_K];
+				//				hidden_hs[l] = new double[hidden_F];
+				//				hidden_hp[l] = new double[hidden_F];
+
 				for (int i = 0; i < hidden_M; i++) {
 					if (l == 0) {
-						//#pragma omp critical
 						hidden_vs[l][i] = input_hs[i];
 					}
 					else {
-						//#pragma omp critical
 						hidden_vs[l][i] = hidden_hs[l - 1][i];
 					}
 				}
@@ -856,9 +825,7 @@ void DBNCF::finetune(string dataset)
 				}
 
 
-				//#pragma omp critical
 				hidden_layers[l]->update_hidden_p(hidden_vs[l], &mask_visible[0], hidden_M, hidden_hp[l]);
-				//#pragma omp critical
 				hidden_layers[l]->sample_hidden(hidden_hp[l], hidden_hs[l]);
 
 				delete [] mask_visible;
@@ -880,7 +847,6 @@ void DBNCF::finetune(string dataset)
 
 			// output:h->v,update visible,算vp的期望
 
-			//#pragma omp critical
 			output_layer->update_visible(hidden_hs[hidden_layer_num - 2], output_vp, &mask_hidden[0], output_F);
 
 			delete [] mask_hidden;
@@ -888,33 +854,41 @@ void DBNCF::finetune(string dataset)
 
 			// 开始计算残差，准备bp
 
-			for (int n = 0; n < min(batch + batch_size, LS->nb_rows); n++) {
+			//			for (int n = 0; n < min(batch + batch_size, LS->nb_rows); n++) {
 
-				// 只更新和这个user有关的那几个节点，每个节点k维
-				for (int m = LS->index[n]; m < LS->index[n] + LS->count[n]; m++) {
+			// 只更新和这个user有关的那几个节点，每个节点k维
+			for (int m = LS->index[n]; m < LS->index[n] + LS->count[n]; m++) {
 
-					int i = LS->ids[m];
-					int ik_0 = _ik(i, 0);
-					// double prediction = 0.;
+				int i = LS->ids[m];
+				int ik_0 = _ik(i, 0);
+				double prediction = 0.;
+				double *delta_output = new double[output_M * output_K];
 
-					for (int k = 0; k < K; k++) {
-						// prediction += output_vp[ik_0 + k] * (k + 1);
-						//
-						double p_out = output_vp[ik_0 + k];
-						////						double fz = hidden_hp[hidden_layer_num - 2][ik_0];  // 最后一个隐层每个节点是一维的
-						////						delta_output[ik_0 + k] = (-1) * output_layer->w (input_vs[ik_0 + k] - pred_i) * pred_i * (1 - pred_i);
+				for (int k = 0; k < K; k++) {
 
-					}
+					prediction += output_vp[ik_0 + k] * (k + 1);
+					double error = prediction - LS->ratings[m];
+					//						cout << "error: " << error << " prediction: " << prediction << " rating: " << TS->ratings[m] << " ik_0:" << ik_0 << " upbound: " << K*M <<endl;
+					// cout << " n: " << n << " ids: " << i << " count: " << count << endl;
 
-				} //遍历完一个batch的所有user
+					total_error += error * error;
+					count++;
 
-				// 开始往回走，更新w和b,但是，d呢？
+				}
 
-			}
+				delete [] delta_output;
+
+			} //遍历完一个batch的所有user
+
+			// 开始往回走，更新w和b,但是，d呢？
+
+			//			}
+
+		} // End of for (int n = batch; n < min(batch + batch_size, LS->nb_rows); n++)
 
 
-		}  // End of for (int batch = 0; batch < LS->nb_rows; batch += batch_size)
-	}  // End of for(int epoch = 0; epoch < train_epochs; epoch++)
+	}  // End of for (int batch = 0; batch < LS->nb_rows; batch += batch_size)
+	//	}  // End of for(int epoch = 0; epoch < train_epochs; epoch++)
 	//    }  // End of for (int l = 0; l < hidden_layer_num - 1; l++)
 
 	if (input_vs != NULL) delete[] input_vs;
@@ -940,7 +914,18 @@ void DBNCF::finetune(string dataset)
 	if (output_vp != NULL) delete[] output_vp;
 	if (output_hs != NULL) delete[] output_hs;
 	if (output_hp != NULL) delete[] output_hp;
+
+	// print running time
+	gettimeofday(&end, NULL);
+	usec = 1000000 * (end.tv_sec-start.tv_sec) + end.tv_usec - start.tv_usec;
+
+	printf( "File: %s, Function: %s, Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
+	printf("Time of test(): %ld usec[ %lf sec].\n", usec, usec / 1000000.);
+
+	return;
 }
+
+
 
 
 double DBNCF::test(string dataset)
