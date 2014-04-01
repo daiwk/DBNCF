@@ -1335,6 +1335,8 @@ void RBMCF::train_batch(string dataset, bool reset, int batch, int batch_size) {
         throw runtime_error("I/O exception! In openning rbm-hs-%d");
     }
  
+    out_hs.write((char*) hs, F * sizeof (double));
+    out_hs.close();
     // 把hs的状态输出到文件，供RBMCF_P当做输入
 
 
