@@ -354,10 +354,10 @@ void AHRBMCF::pretrain_old_version(string dataset, bool reset)
 				sprintf(rmse_input, "%d\t%lf\t%lf\tinput\t%lf\n", epoch, input_layer->test("TS"), input_layer->test("LS"), usec_train / 1000000.);
 				*out << rmse_input;
 
-//				cout << "calc full rmse...\n";
-//				char rmse_full[1000];
-//				sprintf(rmse_full, "%d\t%lf\t%lf\tfull\n", epoch, test("TS"), test("LS"));
-//				*out << rmse_full;
+				cout << "calc full rmse...\n";
+				char rmse_full[1000];
+				sprintf(rmse_full, "%d\t%lf\t%lf\tfull\n", epoch, test("TS"), test("LS"));
+				*out << rmse_full;
 
 				//		cout << "calc output rmse...\n";
 				//		char rmse_output[1000];
