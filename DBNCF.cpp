@@ -195,7 +195,7 @@ void DBNCF::train(string dataset, bool reset)
 {
 	pretrain(dataset, reset);
 
-	pretrain_old_version(dataset, reset);
+//	pretrain_old_version(dataset, reset);
 	printf("full RBSE: %lf\n", test("LS"));
 	//    printf("####after training, use full network to predict...\n");
 	//	printf("generalization RMSE: %lf\n", test("TS"));
@@ -455,7 +455,6 @@ void DBNCF::pretrain(string dataset, bool reset)
 	int count = 0;
 
 	printf("starting pretrain...\n");
-	//    for (int i = 0; i < hidden_layer_num; i++) {
 
 	int F = input_layer->F;
 	int M = input_layer->M;
@@ -709,9 +708,7 @@ void DBNCF::pretrain(string dataset, bool reset)
 	return;
 }
 
-
-
-void DBNCF::finetune(string dataset)
+void DBNCF::finetune(string dataset) // dataset=QS..
 {
 
 	Dataset* LS = sets[dataset];
@@ -734,7 +731,7 @@ void DBNCF::finetune(string dataset)
 	double total_error = 0.;
 	int count = 0;
 
-	printf("starting test...\n");
+	printf("starting finetune...\n");
 	//    for (int i = 0; i < hidden_layer_num; i++) {
 
 	int F = input_layer->F;
@@ -762,19 +759,18 @@ void DBNCF::finetune(string dataset)
 	double** hidden_hs = new double* [hidden_layer_num - 1];
 	double** hidden_hp = new double* [hidden_layer_num - 1];
 
-
 	for (int l = 0; l < hidden_layer_num - 1; l++) {
 
-		int hidden_M = hidden_layers[l]->M;
-		int hidden_K = hidden_layers[l]->K;
-		int hidden_F = hidden_layers[l]->F;
+	//	int hidden_M = hidden_layers[l]->M;
+	//	int hidden_K = hidden_layers[l]->K;
+	//	int hidden_F = hidden_layers[l]->F;
 
-		hidden_vs[l] = new double[hidden_M * hidden_K];
-		hidden_vp[l] = new double[hidden_M * hidden_K];
-		hidden_hs[l] = new double[hidden_F];
-		hidden_hp[l] = new double[hidden_F];
+		hidden_vs[l] = new double[hidden_layers[l]->M * hidden_layers[l]->K];
+		hidden_vp[l] = new double[hidden_layers[l]->M * hidden_layers[l]->K];
+		hidden_hs[l] = new double[hidden_layers[l]->F];
+		hidden_hp[l] = new double[hidden_layers[l]->F];
 
-		int* mask_visible = new int[hidden_M];
+		int* mask_visible = new int[hidden_layers[l]->M];
 	}
 
 
@@ -845,7 +841,7 @@ void DBNCF::finetune(string dataset)
 				//				hidden_hs[l] = new double[hidden_F];
 				//				hidden_hp[l] = new double[hidden_F];
 
-				for (int i = 0; i < hidden_M; i++) {
+				for (int i = 0; i < hidden_layers[l]->M; i++) {
 					if (l == 0) {
 						hidden_vs[l][i] = input_hs[i];
 					}
@@ -854,13 +850,13 @@ void DBNCF::finetune(string dataset)
 					}
 				}
 
-				int* mask_visible = new int[hidden_M];
-				for(int ind = 0; ind < hidden_M; ind++) {
+				int* mask_visible = new int[hidden_layers[l]->M];
+				for(int ind = 0; ind < hidden_layers[l]->M; ind++) {
 					mask_visible[ind] = ind;
 				}
 
 
-				hidden_layers[l]->update_hidden_p(hidden_vs[l], &mask_visible[0], hidden_M, hidden_hp[l]);
+				hidden_layers[l]->update_hidden_p(hidden_vs[l], &mask_visible[0], hidden_layers[l]->M, hidden_hp[l]);
 				hidden_layers[l]->sample_hidden(hidden_hp[l], hidden_hs[l]);
 
 				delete [] mask_visible;
@@ -870,19 +866,19 @@ void DBNCF::finetune(string dataset)
 			int output_F = hidden_layers[hidden_layer_num - 2]->F;
 			int output_M = output_layer->M;
 
-			int* mask_hidden= new int[output_F];
-			for(int ind = 0; ind < output_F; ind++) {
+			int* mask_hidden= new int[hidden_layers[hidden_layer_num - 2]->F];
+			for(int ind = 0; ind < hidden_layers[hidden_layer_num - 2]->F; ind++) {
 				mask_hidden[ind] = ind;
 			}
 
-			int* mask_visible = new int[output_M];
-			for(int ind = 0; ind < output_M; ind++) {
+			int* mask_visible = new int[output_layer->M];
+			for(int ind = 0; ind < output_layer->M; ind++) {
 				mask_visible[ind] = ind;
 			}
 
 			// output:h->v,update visible,算vp的期望
 
-			output_layer->update_visible(hidden_hs[hidden_layer_num - 2], output_vp, &mask_hidden[0], output_F);
+			output_layer->update_visible(hidden_hs[hidden_layer_num - 2], output_vp, &mask_hidden[0], hidden_layers[hidden_layer_num - 2]->F);
 
 			delete [] mask_hidden;
 			delete [] mask_visible;
@@ -959,7 +955,6 @@ void DBNCF::finetune(string dataset)
 
 	return;
 }
-
 
 
 
