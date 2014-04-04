@@ -897,15 +897,10 @@ void DBNCF::finetune(string dataset) // dataset=QS..
 
 				for (int k = 0; k < K; k++) {
 
-					prediction += output_vp[ik_0 + k] * (k + 1);
-					double error = prediction - LS->ratings[m];
-					//						cout << "error: " << error << " prediction: " << prediction << " rating: " << TS->ratings[m] << " ik_0:" << ik_0 << " upbound: " << K*M <<endl;
-					// cout << " n: " << n << " ids: " << i << " count: " << count << endl;
-
-					total_error += error * error;
-					count++;
-
-				}
+//					prediction += output_vp[ik_0 + k] * (k + 1);
+//					double error = prediction - LS->ratings[m];
+                    double dt = output_vp[ik_0 + k] - input_vp[ik_0];
+                }
 
 				delete [] delta_output;
 
@@ -1147,17 +1142,18 @@ double DBNCF::test(string dataset)
 
 				for (int k = 0; k < K; k++) {
 
-					prediction += output_vp[ik_0 + k] * (k + 1);
-					double error = prediction - LS->ratings[m];
-					//						cout << "error: " << error << " prediction: " << prediction << " rating: " << TS->ratings[m] << " ik_0:" << ik_0 << " upbound: " << K*M <<endl;
-					// cout << " n: " << n << " ids: " << i << " count: " << count << endl;
-
-					total_error += error * error;
-					count++;
-
-				}
-
-				delete [] delta_output;
+ 					prediction += output_vp[ik_0 + k] * (k + 1);
+                }
+ 					double error = prediction - LS->ratings[m];
+// 					//						cout << "error: " << error << " prediction: " << prediction << " rating: " << TS->ratings[m] << " ik_0:" << ik_0 << " upbound: " << K*M <<endl;
+// 					// cout << " n: " << n << " ids: " << i << " count: " << count << endl;
+// 
+ 					total_error += error * error;
+ 					count++;
+				
+                    delete [] delta_output;
+				
+            
 
 			} //遍历完一个batch的所有user
 
