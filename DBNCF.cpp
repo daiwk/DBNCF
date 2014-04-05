@@ -504,6 +504,12 @@ void DBNCF::pretrain(string dataset, bool reset)
 	double* output_hs = new double[output_F];
 	double* output_hp = new double[output_F];
 
+    output_layer->addSet(dataset, LS);
+	output_layer->addSet("QS", QS);
+	output_layer->addSet("VS", VS);
+	output_layer->addSet("TS", TS);
+
+
 	*out <<"EPOch\tgen-RMSE\ttrain-RMSE\tinput\\full\\out\ttime\n";
 	out->flush();
 
