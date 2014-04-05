@@ -647,6 +647,31 @@ void DBNCF::pretrain(string dataset, bool reset)
 		
 			}  // End of for (int batch = 0; batch < LS->nb_rows; batch += batch_size)
 	    }  // End of for (int i = 0; i < hidden_layer_num - 1; i++)
+	int output_hidden_size = hidden_layers[hidden_layer_num - 2]->F;
+	printf("output_hidden_size of last hidden: %d\n", output_hidden_size);
+
+	// 将最后一个隐层的bias赋值给output的隐层的bias
+	for(int m = 0; m < output_hidden_size; m++) {
+
+		double now_hb = hidden_layers[hidden_layer_num - 2]->hb[m];
+
+		output_layer->hb[m] = now_hb;
+		// printf("output now_hb: %lf\n ", output_layer->hb[m]);
+	}
+
+	for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
+		bool reset = false;
+		output_layer->train_batch(dataset, reset, batch);
+	}
+
+	// 将output的隐层的bias赋值给最后一个隐层
+	for(int m = 0; m < output_hidden_size; m++) {
+
+		double now_hb = output_layer->hb[m];
+
+		hidden_layers[hidden_layer_num - 2]->hb[m] = now_hb;
+		// printf("output now_hb: %lf\n ", output_layer->hb[m]);
+	}
 
 #pragma omp single
 		{
@@ -704,7 +729,18 @@ void DBNCF::pretrain(string dataset, bool reset)
 
 	printf( "File: %s, Function: %s, Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
 	printf("Time of test(): %ld usec[ %lf sec].\n", usec, usec / 1000000.);
+	
+	char ss[1000];
+	sprintf(ss, "rbm-%d", 0);
+	string rbm_name = ss;
+	input_layer->save(rbm_name);
 
+	for(int i = 0; i < hidden_layer_num - 1; i++) {
+		char ss[1000];
+		sprintf(ss, "rbm-%d", i + 1);
+		string rbm_name = ss;
+		hidden_layers[i]->save(rbm_name);
+	}
 	return;
 }
 
