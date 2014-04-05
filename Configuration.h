@@ -166,7 +166,7 @@ namespace Config {
         static const int BATCH_SIZE = 3000;  // 默认100;
 	// HL是HiddenLayer的缩写
         static const int HL_SIZE = 20;  // 默认20;
-        static const int HL_NUM = 1;  // 默认2;
+        static const int HL_NUM = 2;  // 默认2;
         // Misc
         static const bool VERBOSE = true;
     }

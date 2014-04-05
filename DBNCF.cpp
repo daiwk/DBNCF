@@ -661,6 +661,7 @@ void DBNCF::pretrain(string dataset, bool reset)
 
 	for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
 		bool reset = false;
+#pragma omp critical
 		output_layer->train_batch(dataset, reset, batch);
 	}
 
