@@ -1134,8 +1134,8 @@ double AHRBMCF::test(string dataset)
 				for (int k = 0; k < K; k++) {
 
 					prediction += output_vp[ik_0 + k] * (k + 1);
-					double error = prediction - LS->ratings[m];
 				}
+					double error = prediction - LS->ratings[m];
 					//						cout << "error: " << error << " prediction: " << prediction << " rating: " << TS->ratings[m] << " ik_0:" << ik_0 << " upbound: " << K*M <<endl;
 					// cout << " n: " << n << " ids: " << i << " count: " << count << endl;
 
