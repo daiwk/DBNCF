@@ -665,20 +665,39 @@ void DBNCF::pretrain(string dataset, bool reset)
 		// printf("output now_hb: %lf\n ", output_layer->hb[m]);
 	}
 
-	for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
-		bool reset = false;
-#pragma omp critical
-		output_layer->train_batch(dataset, reset, batch);
-	}
+//	for (int batch = 0; batch < LS->nb_rows; batch += batch_size) {
+//		bool reset = false;
+//#pragma omp critical
+//		output_layer->train_batch(dataset, reset, batch);
+//	}
 
-	// 将output的隐层的bias赋值给最后一个隐层
-	for(int m = 0; m < output_hidden_size; m++) {
+    for (int i = 0; i < M; i++) {
+        for (int k = 0; k < K; k++) {
+            for (int j = 0; j < F; j++) {
+                output_layer->w[_ikj(i, k, j)] = input_layer->w[_ikj(i, k, j)];
+            }
+        }
+    }
 
-		double now_hb = output_layer->hb[m];
+    for (int i = 0; i < M; i++) {
 
-		hidden_layers[hidden_layer_num - 2]->hb[m] = now_hb;
-		// printf("output now_hb: %lf\n ", output_layer->hb[m]);
-	}
+        int ik_0 = _ik(i, 0);
+
+        for (int k = 0; k < K; k++) {
+            int ik = ik_0 + k;
+            output_layer->vb[ik] = input_layer->vb[ik];
+            
+        }
+    }
+
+//	// 将output的隐层的bias赋值给最后一个隐层
+//	for(int m = 0; m < output_hidden_size; m++) {
+//
+//		double now_hb = output_layer->hb[m];
+//
+//		hidden_layers[hidden_layer_num - 2]->hb[m] = now_hb;
+//		// printf("output now_hb: %lf\n ", output_layer->hb[m]);
+//	}
 
 #pragma omp single
 		{
